@@ -60,7 +60,13 @@ Distances use box centers divided by the image diagonal, not physical meters. As
 
 Create annotations for the same complete run/clip:
 
-Start an annotation draft from a tracked video session:
+In a newly generated review page, click **Download annotation draft**. This works
+in saved HTML too and uses the currently loaded tracked video. Images and invalid
+video records disable the button. The draft contains navigation references only;
+model events and human candidate verdicts are not copied into labels. Previously
+generated HTML pages need to be regenerated to include the new button.
+
+Alternatively, start a draft from the command line:
 
 ```powershell
 .\.venv\Scripts\python.exe -m camera_system.review outputs/session.jsonl --annotation-template --output outputs/annotations-draft.json
@@ -109,3 +115,6 @@ an incomplete pair is rejected rather than silently ignoring relation labels.
 See [prototype-verification.md](prototype-verification.md). Earlier phase records are historical snapshots. Remaining work for deployment includes physical webcam testing, moving-object/occlusion evaluation, domain calibration and held-out event accuracy. A representative recorded camera clip and manual labels are the next practical inputs.
 
 Lightweight tests: `.\.venv\Scripts\python.exe -m pytest -q`. For the real-model tests, set `RUN_MODEL_TESTS=1`, `RUN_DETECTOR_TESTS=1` and `RUN_VIDEO_TESTS=1`; keep `HF_HOME` pointed at the downloaded cache. `HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1` permit cached inference. Local YOLO weights must also be present.
+
+Browser draft regression checks use Node.js when available (provided by CI);
+it is not required to run the Python application or use the review page.

@@ -44,3 +44,22 @@ held-out evaluation. No accuracy or false-alarm score is claimed by this package
 
 Physical/network cameras, GPU performance and live external lookups were not
 retested. This milestone verifies the review workflow, not event correctness.
+
+## Follow-up: browser annotation draft download
+
+New reviews include **Download annotation draft**, using the currently loaded
+tracked video. The output matches the CLI draft schema and instructions, leaves
+labels/duration unset, and excludes predictions and candidate verdicts. It works
+entirely in the browser, including saved HTML; no API or inference dependency was
+added. Existing generated HTML needs regeneration to receive the new control.
+
+Validation: 132 tests passed, four optional model tests skipped; Ruff passed.
+Seven Node-backed cases check CLI parity, invalid inputs, empty/image sessions
+and changed session references. CI explicitly provides Node; local checks skip
+these seven tests if Node is unavailable. Browser testing downloaded the 50-frame
+traffic draft and compared it exactly to the Python result. Opening an image
+disabled the control; reloading the video restored it. No console errors were
+reported. Inference and hardware tests were not repeated for this UI change.
+
+Updated local review: `outputs/user-27183-20261009/review-with-annotations.html`.
+Screenshot: `outputs/user-27183-20261009/annotation-download.jpg`.

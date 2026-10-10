@@ -14,11 +14,12 @@ record individual runs rather than the current feature list.
 | Person observations | Pose, approximate appearance and image movement | Domain validation; walking/running/falls are not implemented classifiers |
 | Website | Local uploads, history, cancel/retry, evidence review and exports; browser smoke checked | Broader browser/upload testing |
 | Plates and lookups | Optional OCR; selected official lookup integrations | Reviewed readings and provider-specific access where required |
-| Evaluation | Event/relation scoring, annotation draft export | Independently reviewed ground truth |
+| Evaluation | Event/relation scoring, CLI and browser annotation draft download | Independently reviewed ground truth |
 | Publication | Published to GitHub main; all four CI jobs passed | See [publication verification](publication-2026-10-10.md) |
 
-Current checks: **129 passed, including all four real-model integration tests**.
-A fresh lightweight setup also passed 125 tests with four model tests skipped. Lint and dependency
+Latest annotation-download checks: **132 passed, four model tests skipped**.
+The preceding inference verification passed all 129 tests including real models;
+model execution was unchanged by the browser-only feature. Lint and dependency
 checks passed. These verify execution, not recognition accuracy. The six audit
 findings have regression coverage; see the [audit backlog](audit-backlog.md) and
 [publication verification](publication-2026-10-10.md).
