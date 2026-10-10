@@ -67,3 +67,9 @@ and are not part of the source publication. Synced `sources/` files were untouch
 
 The Windows/Linux CI workflow runs lightweight tests only. Its remote outcome
 must be checked separately from these local results.
+
+## GitHub outcome
+
+Published as commit `717831fc7420fed1d9b6b18481592ab3991b6a79` on `main`.
+[GitHub Actions run 38034253037](https://github.com/kasanket64-prog/Work-mode/actions/runs/38034253037)
+completed successfully on all four combinations of Windows/Linux and Python 3.12/3.13.

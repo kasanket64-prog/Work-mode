@@ -12,10 +12,10 @@ record individual runs rather than the current feature list.
 | Relationships | Pinned RelateAnything model and configurable vocabulary | Domain calibration and measured precision/recall |
 | Event candidates | Dwell, distance trends, zones and unattended-bag reasoning | Independent event labels and false-alarm measurement |
 | Person observations | Pose, approximate appearance and image movement | Domain validation; walking/running/falls are not implemented classifiers |
-| Website | Local uploads, history, cancel/retry, evidence review and exports | Fresh browser verification |
+| Website | Local uploads, history, cancel/retry, evidence review and exports; browser smoke checked | Broader browser/upload testing |
 | Plates and lookups | Optional OCR; selected official lookup integrations | Reviewed readings and provider-specific access where required |
 | Evaluation | Event/relation scoring, annotation draft export | Independently reviewed ground truth |
-| Publication | Verified source prepared for GitHub | See [publication verification](publication-2026-10-10.md) |
+| Publication | Published to GitHub main; all four CI jobs passed | See [publication verification](publication-2026-10-10.md) |
 
 Current checks: **129 passed, including all four real-model integration tests**.
 A fresh lightweight setup also passed 125 tests with four model tests skipped. Lint and dependency
@@ -28,7 +28,7 @@ findings have regression coverage; see the [audit backlog](audit-backlog.md) and
 | Order | Work | Complete when |
 | --- | --- | --- |
 | 1 | Reliability and security | Six audit regressions now covered; validate against representative workloads |
-| 2 | Finish supplied-video review package | Matching review HTML and annotation draft exist for `user-27183-20261009`; website opens successfully |
+| 2 | Supplied-video review package complete | Review HTML and annotation draft generated; browser navigation and verdict export verified. See [review verification](review-package-2026-10-10.md) |
 | 3 | Establish the baseline | Independent annotations cover the evaluated footage; precision, recall, F1 and false alarms/hour are saved |
 | 4 | Improve the weakest component | Error analysis identifies detection, tracking, relations or rules; improvements are measured on separate test footage |
 | 5 | Optional THID experiment | Same labeled frames and comparable metrics demonstrate whether it helps; THID is researched only, not installed/integrated |
@@ -57,9 +57,9 @@ after profiling the chosen workload.
 | Check attribution and dependencies | [Third-party notices](../THIRD_PARTY_NOTICES.md), [package configuration](../pyproject.toml) |
 
 Run commands from `Work-mode/` using its `.venv`. The website entry point is
-`python -m camera_system.app`, normally at `http://127.0.0.1:8780/`. Its most recent
-opening attempt was blocked by approval-service limits; this document does not
-assert that a server is currently running.
+`python -m camera_system.app`, normally at `http://127.0.0.1:8780/`. The workspace
+and standalone review opened successfully during the 10 October browser check.
+Start the server again when needed; its lifetime is local to your computer.
 
 ## Saved work and evidence
 
@@ -71,7 +71,7 @@ artifacts are local and will not appear in a fresh clone.
 | Latest supplied-video analysis | `outputs/user-27183-20261009/session.jsonl` | Completed: 736 decoded frames, 50 analyzed samples |
 | Reference image from that video | `outputs/user-27183-20261009/reference-12s.jpg` | Saved |
 | Processing diagnostics | `outputs/user-27183-processing-20261009.log` | Saved |
-| Latest video's review and annotation draft | `outputs/user-27183-20261009/` | Not generated yet |
+| Latest video's review and annotation draft | `outputs/user-27183-20261009/review.html`, `annotations-draft.json` | Generated and checked; annotations remain unreviewed |
 | Earlier traffic annotation draft | `outputs/traffic-annotations-draft-20261009.json` | Unreviewed; different 19-frame traffic session |
 | Website-managed jobs | `outputs/workspace/<job-id>/` | Upload, job metadata, results, logs and generated review |
 
