@@ -1,0 +1,8 @@
+model_id = "maelic/relsgg-vits16plus"
+model_revision = "2db90096be5217bdc7a9003c042950f45723d105"
+device = "cpu"
+topk = 50
+# Allows the office detector's 40-object limit through to relationship inference.
+max_regions = 40
+min_score = 0.0
+vocabulary = ["holding", "carrying", "beside", "wearing", "sitting on", "standing on"]

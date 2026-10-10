@@ -1,0 +1,10 @@
+# Example only: replace the normalized rectangle with a reviewed area in your fixed camera.
+min_hits = 3
+min_duration_seconds = 0.5
+max_gap_seconds = 1.5
+zone_margin_fraction = 0.01
+
+[[zones]]
+id = "review-area"
+box = [0.25, 0.25, 0.75, 0.9]
+labels = ["person", "car", "bicycle"]

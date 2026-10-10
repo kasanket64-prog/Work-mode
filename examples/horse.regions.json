@@ -1,0 +1,4 @@
+[
+  {"id": "person-1", "label": "person", "box": [470, 130, 650, 630]},
+  {"id": "horse-1", "label": "horse", "box": [90, 310, 1010, 875]}
+]

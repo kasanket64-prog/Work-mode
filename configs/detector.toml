@@ -1,0 +1,6 @@
+model = "yolo11n.pt"
+confidence = 0.25
+# YOLO11 uses NMS; lower IoU suppresses more overlapping detections.
+iou = 0.7
+image_size = 640
+max_detections = 20

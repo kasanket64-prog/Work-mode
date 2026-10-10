@@ -1,0 +1,955 @@
+{
+  "source": "https://github.com/baywolf88/seeallthethings",
+  "source_file_sha": "f69747618ceab11e8522820c889dbce71ef41e9a",
+  "checked_on": "2026-10-07",
+  "cameras": [
+    {
+      "name": "5:  Elmwood Ave",
+      "area": "Columbia",
+      "latitude": 34.009967,
+      "longitude": -81.050091
+    },
+    {
+      "name": "6:  I-126 E @ Huger Street",
+      "area": "Columbia",
+      "latitude": 34.008779,
+      "longitude": -81.052432
+    },
+    {
+      "name": "7:  I-126 E @ Broad River Bridge",
+      "area": "Columbia",
+      "latitude": 34.009855,
+      "longitude": -81.06269
+    },
+    {
+      "name": "8:  I-126 E @ Greystone Blvd",
+      "area": "Columbia",
+      "latitude": 34.012136,
+      "longitude": -81.074205
+    },
+    {
+      "name": "9:  I-126 E @ Candy Lane",
+      "area": "Columbia",
+      "latitude": 34.014064,
+      "longitude": -81.08186
+    },
+    {
+      "name": "10:  I-126 E @ Colonial Life Blvd",
+      "area": "Columbia",
+      "latitude": 34.018092,
+      "longitude": -81.091501
+    },
+    {
+      "name": "11:  I-126 W @ I-26 E Flyover",
+      "area": "Columbia",
+      "latitude": 34.024724,
+      "longitude": -81.098137
+    },
+    {
+      "name": "13:  I-20 W @ MM 63 (Bush River Rd)",
+      "area": "Columbia",
+      "latitude": 34.03185,
+      "longitude": -81.121627
+    },
+    {
+      "name": "14:  I-26 W @ I-20 W (Exit 107)",
+      "area": "Columbia",
+      "latitude": 34.037182,
+      "longitude": -81.110651
+    },
+    {
+      "name": "15:  US 378 @ I-26 E",
+      "area": "Columbia",
+      "latitude": 34.00399,
+      "longitude": -81.110183
+    },
+    {
+      "name": "16:  I-26 E @ MM 108 (Bush River Rd)",
+      "area": "Columbia",
+      "latitude": 34.030598,
+      "longitude": -81.104821
+    },
+    {
+      "name": "17:  I-26 W @ Exit 108 (Flyover)",
+      "area": "Columbia",
+      "latitude": 34.027408,
+      "longitude": -81.101358
+    },
+    {
+      "name": "18:  I-26 E @ I-77 S",
+      "area": "Columbia",
+      "latitude": 33.92664,
+      "longitude": -81.070981
+    },
+    {
+      "name": "19:  I-26 W @ MM 117",
+      "area": "Columbia",
+      "latitude": 33.912245,
+      "longitude": -81.056916
+    },
+    {
+      "name": "20:  I-26 E @ I-77",
+      "area": "Columbia",
+      "latitude": 33.927804,
+      "longitude": -81.06977
+    },
+    {
+      "name": "21:  I-26 E @ MM 106",
+      "area": "Columbia",
+      "latitude": 34.050989,
+      "longitude": -81.124907
+    },
+    {
+      "name": "22:  I-26 W @ MM 106 (St. Andrews Rd)",
+      "area": "Columbia",
+      "latitude": 34.042285,
+      "longitude": -81.115473
+    },
+    {
+      "name": "23:  I-26 W @ MM 106",
+      "area": "Columbia",
+      "latitude": 34.047257,
+      "longitude": -81.120218
+    },
+    {
+      "name": "24:  I-26 W @ MM 105.5",
+      "area": "Columbia",
+      "latitude": 34.053514,
+      "longitude": -81.127052
+    },
+    {
+      "name": "25:  I-26 W @ MM 105",
+      "area": "Columbia",
+      "latitude": 34.060663,
+      "longitude": -81.134846
+    },
+    {
+      "name": "26:  I-26 W @ MM 104 (Piney Grove Rd)",
+      "area": "Columbia",
+      "latitude": 34.067395,
+      "longitude": -81.141588
+    },
+    {
+      "name": "27:  I-26 W @ MM 103.9",
+      "area": "Columbia",
+      "latitude": 34.072714,
+      "longitude": -81.147225
+    },
+    {
+      "name": "28:  I-26 W @ MM 103 (Harbison Blvd)",
+      "area": "Columbia",
+      "latitude": 34.078128,
+      "longitude": -81.152319
+    },
+    {
+      "name": "29:  I-126 W @ Greystone Blvd",
+      "area": "Columbia",
+      "latitude": 34.012043,
+      "longitude": -81.069036
+    },
+    {
+      "name": "30:  I-26 W @ MM 109",
+      "area": "Columbia",
+      "latitude": 34.016283,
+      "longitude": -81.106877
+    },
+    {
+      "name": "31:  I-26 E @ Exit 110 (US 378)",
+      "area": "Columbia",
+      "latitude": 34.006953,
+      "longitude": -81.111294
+    },
+    {
+      "name": "32:  I-26 W @ MM 110.5 (Leaphart Rd)",
+      "area": "Columbia",
+      "latitude": 33.99304,
+      "longitude": -81.107401
+    },
+    {
+      "name": "33:  I-26 E @ Exit 111 (US 1)",
+      "area": "Columbia",
+      "latitude": 33.980546,
+      "longitude": -81.107249
+    },
+    {
+      "name": "34:  I-26 E @ MM 112",
+      "area": "Columbia",
+      "latitude": 33.968721,
+      "longitude": -81.100552
+    },
+    {
+      "name": "35:  I-26 W @ MM 112",
+      "area": "Columbia",
+      "latitude": 33.967189,
+      "longitude": -81.098984
+    },
+    {
+      "name": "36:  I-26 E @ Exit 113 (SC 302)",
+      "area": "Columbia",
+      "latitude": 33.955652,
+      "longitude": -81.0933
+    },
+    {
+      "name": "37:  I-26 E @ MM 113.5",
+      "area": "Columbia",
+      "latitude": 33.946564,
+      "longitude": -81.090334
+    },
+    {
+      "name": "38:  I-26 E @ MM 114 (Old Dunbar Rd)",
+      "area": "Columbia",
+      "latitude": 33.938521,
+      "longitude": -81.08665
+    },
+    {
+      "name": "39:  I-26 E @ MM 115 (US 321)",
+      "area": "Columbia",
+      "latitude": 33.9328,
+      "longitude": -81.07724
+    },
+    {
+      "name": "40:  I-26 W @ MM 102.5",
+      "area": "Columbia",
+      "latitude": 34.083991,
+      "longitude": -81.158371
+    },
+    {
+      "name": "41:  I-26 W @ Exit 102",
+      "area": "Columbia",
+      "latitude": 34.091288,
+      "longitude": -81.165767
+    },
+    {
+      "name": "42:  I-26 W @ Exit 101",
+      "area": "Columbia",
+      "latitude": 34.098738,
+      "longitude": -81.174135
+    },
+    {
+      "name": "43:  I-26 W @ MM 100.5",
+      "area": "Columbia",
+      "latitude": 34.105869,
+      "longitude": -81.18162
+    },
+    {
+      "name": "44:  I-26 E @ MM 100",
+      "area": "Columbia",
+      "latitude": 34.110319,
+      "longitude": -81.186902
+    },
+    {
+      "name": "45:  I-26 W @ MM 99.5",
+      "area": "Columbia",
+      "latitude": 34.116478,
+      "longitude": -81.192552
+    },
+    {
+      "name": "46:  I-26 W @ MM 99",
+      "area": "Columbia",
+      "latitude": 34.122336,
+      "longitude": -81.198638
+    },
+    {
+      "name": "47:  I-26 W @ MM 98.5",
+      "area": "Columbia",
+      "latitude": 34.128757,
+      "longitude": -81.205277
+    },
+    {
+      "name": "48:  I-26 W @ MM 98",
+      "area": "Columbia",
+      "latitude": 34.133951,
+      "longitude": -81.211292
+    },
+    {
+      "name": "49:  I-26 W @ MM 97.5",
+      "area": "Columbia",
+      "latitude": 34.138227,
+      "longitude": -81.220399
+    },
+    {
+      "name": "60:  I-20 W @ MM 64 (Burning Tree)",
+      "area": "Columbia",
+      "latitude": 34.038128,
+      "longitude": -81.106625
+    },
+    {
+      "name": "61:  I-20 E @ Exit 65 (Broad River Rd)",
+      "area": "Columbia",
+      "latitude": 34.039255,
+      "longitude": -81.093325
+    },
+    {
+      "name": "62:  I-20 E @ MM 66",
+      "area": "Columbia",
+      "latitude": 34.045623,
+      "longitude": -81.078535
+    },
+    {
+      "name": "63:  I-20 W @ Broad River Bridge",
+      "area": "Columbia",
+      "latitude": 34.049018,
+      "longitude": -81.071246
+    },
+    {
+      "name": "64:  I-20 W @ MM 67",
+      "area": "Columbia",
+      "latitude": 34.051755,
+      "longitude": -81.065001
+    },
+    {
+      "name": "65:  I-20 W @ MM 67.3",
+      "area": "Columbia",
+      "latitude": 34.055285,
+      "longitude": -81.057164
+    },
+    {
+      "name": "66:  I-20 W @ MM 68.1",
+      "area": "Columbia",
+      "latitude": 34.061906,
+      "longitude": -81.047906
+    },
+    {
+      "name": "67:  I-20 W @ MM 68.5",
+      "area": "Columbia",
+      "latitude": 34.066305,
+      "longitude": -81.039481
+    },
+    {
+      "name": "68:  I-20 E @ Exit 70 (Fairfield Rd)",
+      "area": "Columbia",
+      "latitude": 34.066314,
+      "longitude": -81.022196
+    },
+    {
+      "name": "69:  I-20 E @ MM 70.2",
+      "area": "Columbia",
+      "latitude": 34.071281,
+      "longitude": -81.011865
+    },
+    {
+      "name": "70:  I-20 W @ MM 70.8",
+      "area": "Columbia",
+      "latitude": 34.073529,
+      "longitude": -81.007627
+    },
+    {
+      "name": "71:  I-20 E @ Exit 71 (North Main St)",
+      "area": "Columbia",
+      "latitude": 34.073469,
+      "longitude": -80.999329
+    },
+    {
+      "name": "72:  I-20 W @ MM 71.5",
+      "area": "Columbia",
+      "latitude": 34.07367,
+      "longitude": -80.99146
+    },
+    {
+      "name": "73:  I-20 W @ MM 72 (Farrow Rd)",
+      "area": "Columbia",
+      "latitude": 34.073239,
+      "longitude": -80.978892
+    },
+    {
+      "name": "74:  I-20 E @ MM 73 (SC 277)",
+      "area": "Columbia",
+      "latitude": 34.073032,
+      "longitude": -80.971139
+    },
+    {
+      "name": "75:  I-20 E @ MM 73.5",
+      "area": "Columbia",
+      "latitude": 34.073819,
+      "longitude": -80.958544
+    },
+    {
+      "name": "76:  I-20 E @ Exit 74 (Two Notch Rd)",
+      "area": "Columbia",
+      "latitude": 34.073639,
+      "longitude": -80.948334
+    },
+    {
+      "name": "77:  I-20 W @ MM 74.5",
+      "area": "Columbia",
+      "latitude": 34.073702,
+      "longitude": -80.942569
+    },
+    {
+      "name": "78:  I-20 E @ MM 75",
+      "area": "Columbia",
+      "latitude": 34.069982,
+      "longitude": -80.933043
+    },
+    {
+      "name": "79:  I-20 E @ MM 75.5",
+      "area": "Columbia",
+      "latitude": 34.067954,
+      "longitude": -80.927043
+    },
+    {
+      "name": "80:  I-20 E @ I-77 S (Exit 76)",
+      "area": "Columbia",
+      "latitude": 34.067219,
+      "longitude": -80.922581
+    },
+    {
+      "name": "81:  I-20 E @ MM 76.5",
+      "area": "Columbia",
+      "latitude": 34.079492,
+      "longitude": -80.893044
+    },
+    {
+      "name": "82:  I-20 E @ MM 77",
+      "area": "Columbia",
+      "latitude": 34.083686,
+      "longitude": -80.882425
+    },
+    {
+      "name": "83:  I-20 E @ MM 77.5",
+      "area": "Columbia",
+      "latitude": 34.085858,
+      "longitude": -80.877594
+    },
+    {
+      "name": "84:  I-20 E @ Smallwood Rd",
+      "area": "Columbia",
+      "latitude": 34.083854,
+      "longitude": -80.882292
+    },
+    {
+      "name": "85:  I-20 E @ MM 78.5",
+      "area": "Columbia",
+      "latitude": 34.092133,
+      "longitude": -80.862194
+    },
+    {
+      "name": "86:  I-20 W @ MM 78.5",
+      "area": "Columbia",
+      "latitude": 34.092353,
+      "longitude": -80.862472
+    },
+    {
+      "name": "87:  I-20 E @ MM 79.5",
+      "area": "Columbia",
+      "latitude": 34.094292,
+      "longitude": -80.856058
+    },
+    {
+      "name": "88:  I-20 W @ MM 79.5",
+      "area": "Columbia",
+      "latitude": 34.101247,
+      "longitude": -80.83835
+    },
+    {
+      "name": "89:  I-20 E @ MM 80 (Clemson Rd)",
+      "area": "Columbia",
+      "latitude": 34.104519,
+      "longitude": -80.829308
+    },
+    {
+      "name": "90:  I-20 E @ MM 81",
+      "area": "Columbia",
+      "latitude": 34.111269,
+      "longitude": -80.809497
+    },
+    {
+      "name": "91:  I-20 E @ MM 82 (Spears Creek Rd)",
+      "area": "Columbia",
+      "latitude": 34.113683,
+      "longitude": -80.805353
+    },
+    {
+      "name": "92:  I-20 E @ MM 82.7",
+      "area": "Columbia",
+      "latitude": 34.111269,
+      "longitude": -80.809497
+    },
+    {
+      "name": "93:  I-20 W @ MM 83.3",
+      "area": "Columbia",
+      "latitude": 34.113683,
+      "longitude": -80.805353
+    },
+    {
+      "name": "96:  I-95 N @ MM 93.2",
+      "area": "Columbia",
+      "latitude": 33.417497,
+      "longitude": -80.494147
+    },
+    {
+      "name": "97:  I-95 S @ MM 91.5",
+      "area": "Columbia",
+      "latitude": 33.397389,
+      "longitude": -80.513256
+    },
+    {
+      "name": "98:  I-95 S @ MM 90 (US-176)",
+      "area": "Columbia",
+      "latitude": 33.382183,
+      "longitude": -80.519261
+    },
+    {
+      "name": "99:  I-95 N @ MM 82 (US-178)",
+      "area": "Columbia",
+      "latitude": 33.271319,
+      "longitude": -80.568872
+    },
+    {
+      "name": "100:  I-95 N @ MM 79",
+      "area": "Columbia",
+      "latitude": 33.227294,
+      "longitude": -80.59155
+    },
+    {
+      "name": "101:  I-26 W @ MM 174",
+      "area": "Columbia",
+      "latitude": 33.266967,
+      "longitude": -80.483253
+    },
+    {
+      "name": "102:  I-26 W @ MM 172 (US-15)",
+      "area": "Columbia",
+      "latitude": 33.287061,
+      "longitude": -80.513144
+    },
+    {
+      "name": "103:  I-95 N @ MM 86",
+      "area": "Columbia",
+      "latitude": 33.318689,
+      "longitude": -80.547439
+    },
+    {
+      "name": "104:  I-95 N @ MM 86",
+      "area": "Columbia",
+      "latitude": 33.318725,
+      "longitude": -80.5474
+    },
+    {
+      "name": "105:  I-26 E @ MM 165 (Hwy 210)",
+      "area": "Columbia",
+      "latitude": 33.359408,
+      "longitude": -80.592447
+    },
+    {
+      "name": "106:  I-26 E @ MM 163",
+      "area": "Columbia",
+      "latitude": 33.377611,
+      "longitude": -80.618797
+    },
+    {
+      "name": "107:  I-26 E @ MM 162",
+      "area": "Columbia",
+      "latitude": 33.389325,
+      "longitude": -80.637047
+    },
+    {
+      "name": "108:  I-26 W @ MM 159 (Homestead Rd)",
+      "area": "Columbia",
+      "latitude": 33.414153,
+      "longitude": -80.667411
+    },
+    {
+      "name": "109:  I-77 N @ Percival",
+      "area": "Columbia",
+      "latitude": 34.051981,
+      "longitude": -80.922701
+    },
+    {
+      "name": "110:  I-77 S @ Decker",
+      "area": "Columbia",
+      "latitude": 34.028334,
+      "longitude": -80.941954
+    },
+    {
+      "name": "111:  I-77 N @ MM 12",
+      "area": "Columbia",
+      "latitude": 34.028366,
+      "longitude": -80.941875
+    },
+    {
+      "name": "112:  I-77 N @ Forest Dr",
+      "area": "Columbia",
+      "latitude": 34.021309,
+      "longitude": -80.945989
+    },
+    {
+      "name": "113:  I-77 S @ MM 10.8",
+      "area": "Columbia",
+      "latitude": 34.002283,
+      "longitude": -80.958677
+    },
+    {
+      "name": "114:  I-77 S @ Fort Jackson Blvd",
+      "area": "Columbia",
+      "latitude": 33.994484,
+      "longitude": -80.958375
+    },
+    {
+      "name": "115:  I-77 N @ MM 9.8",
+      "area": "Columbia",
+      "latitude": 33.989432,
+      "longitude": -80.952804
+    },
+    {
+      "name": "116:  I-77 N @ MM 9 (Garners Ferry Rd)",
+      "area": "Columbia",
+      "latitude": 33.973112,
+      "longitude": -80.954548
+    },
+    {
+      "name": "117:  I-77 N @ MM 7.5",
+      "area": "Columbia",
+      "latitude": 33.95553,
+      "longitude": -80.956747
+    },
+    {
+      "name": "118:  I-77 N @ MM 6.3 (Shop Rd)",
+      "area": "Columbia",
+      "latitude": 33.949211,
+      "longitude": -80.976707
+    },
+    {
+      "name": "119:  I-77 S @ MM 5 (Bluff Rd)",
+      "area": "Columbia",
+      "latitude": 33.950903,
+      "longitude": -80.989952
+    },
+    {
+      "name": "120:  I-77 @ MM 4",
+      "area": "Columbia",
+      "latitude": 33.935096,
+      "longitude": -81.011492
+    },
+    {
+      "name": "121:  I-77 @ MM 3",
+      "area": "Columbia",
+      "latitude": 33.928464,
+      "longitude": -81.03163
+    },
+    {
+      "name": "122:  I-77 S @ MM 2",
+      "area": "Columbia",
+      "latitude": 33.92958,
+      "longitude": -81.04333
+    },
+    {
+      "name": "123:  I-26 E @ MM 116.5",
+      "area": "Columbia",
+      "latitude": 33.917722,
+      "longitude": -81.063856
+    },
+    {
+      "name": "124:  I-26 W @ MM 117.5",
+      "area": "Columbia",
+      "latitude": 33.906331,
+      "longitude": -81.051856
+    },
+    {
+      "name": "125:  I-26 W @ MM 118.5",
+      "area": "Columbia",
+      "latitude": 33.889697,
+      "longitude": -81.040067
+    },
+    {
+      "name": "126:  I-26 E @ MM 119",
+      "area": "Columbia",
+      "latitude": 33.880464,
+      "longitude": -81.037128
+    },
+    {
+      "name": "127:  I-26 E @ MM 120.7",
+      "area": "Columbia",
+      "latitude": 33.863708,
+      "longitude": -81.031997
+    },
+    {
+      "name": "128:  I-26 E @ MM 121.5",
+      "area": "Columbia",
+      "latitude": 33.849247,
+      "longitude": -81.026731
+    },
+    {
+      "name": "129:  I-26 E @ MM 123 (Rest Area)",
+      "area": "Columbia",
+      "latitude": 33.838667,
+      "longitude": -81.023061
+    },
+    {
+      "name": "130:  I-26 E @ MM 123.5",
+      "area": "Columbia",
+      "latitude": 33.827783,
+      "longitude": -81.01905
+    },
+    {
+      "name": "131:  I-26 E @ MM 125",
+      "area": "Columbia",
+      "latitude": 33.810883,
+      "longitude": -81.007461
+    },
+    {
+      "name": "132:  I-26 E @ MM 126",
+      "area": "Columbia",
+      "latitude": 33.794044,
+      "longitude": -80.995656
+    },
+    {
+      "name": "133:  I-26 E @ MM 127.2",
+      "area": "Columbia",
+      "latitude": 33.780906,
+      "longitude": -80.986189
+    },
+    {
+      "name": "134:  I-26 E @ MM 128.5",
+      "area": "Columbia",
+      "latitude": 33.767914,
+      "longitude": -80.972439
+    },
+    {
+      "name": "135:  I-26 E @ Exit 129",
+      "area": "Columbia",
+      "latitude": 33.764586,
+      "longitude": -80.964233
+    },
+    {
+      "name": "136:  I-26 W @ MM 129.2",
+      "area": "Columbia",
+      "latitude": 33.762672,
+      "longitude": -80.957733
+    },
+    {
+      "name": "137:  I-26 W @ MM 130.5",
+      "area": "Columbia",
+      "latitude": 33.749583,
+      "longitude": -80.94305
+    },
+    {
+      "name": "138:  I-26 W @ MM 131.5",
+      "area": "Columbia",
+      "latitude": 33.738419,
+      "longitude": -80.936344
+    },
+    {
+      "name": "139:  I-26 W @ MM 132",
+      "area": "Columbia",
+      "latitude": 33.728842,
+      "longitude": -80.930647
+    },
+    {
+      "name": "140:  I-26 W @ MM 133.5",
+      "area": "Columbia",
+      "latitude": 33.710211,
+      "longitude": -80.919625
+    },
+    {
+      "name": "141:  I-26 E @ MM 134.2",
+      "area": "Columbia",
+      "latitude": 33.700333,
+      "longitude": -80.915439
+    },
+    {
+      "name": "142:  I-26 W @ MM 135.5",
+      "area": "Columbia",
+      "latitude": 33.682686,
+      "longitude": -80.904531
+    },
+    {
+      "name": "143:  I-26 W @ Exit 136",
+      "area": "Columbia",
+      "latitude": 33.6724,
+      "longitude": -80.897475
+    },
+    {
+      "name": "144:  I-26 W @ Exit 139",
+      "area": "Columbia",
+      "latitude": 33.634533,
+      "longitude": -80.875475
+    },
+    {
+      "name": "145:  I-26 W @ Exit 149",
+      "area": "Columbia",
+      "latitude": 33.520014,
+      "longitude": -80.790939
+    },
+    {
+      "name": "146:  I-20 E @ MM 62.5",
+      "area": "Columbia",
+      "latitude": 34.023814,
+      "longitude": -81.130303
+    },
+    {
+      "name": "147:  I-20 E @ MM 62",
+      "area": "Columbia",
+      "latitude": 34.015325,
+      "longitude": -81.140311
+    },
+    {
+      "name": "148:  I-20 W @ Exit 61",
+      "area": "Columbia",
+      "latitude": 34.011447,
+      "longitude": -81.149122
+    },
+    {
+      "name": "150:  I-20 E @ MM 60.5",
+      "area": "Columbia",
+      "latitude": 34.005861,
+      "longitude": -81.161644
+    },
+    {
+      "name": "152:  I-20 E @ MM 59.5",
+      "area": "Columbia",
+      "latitude": 33.994964,
+      "longitude": -81.177489
+    },
+    {
+      "name": "153:  I-20 E @ MM 59",
+      "area": "Columbia",
+      "latitude": 33.991808,
+      "longitude": -81.183481
+    },
+    {
+      "name": "154:  I-20 W @ MM 58.5",
+      "area": "Columbia",
+      "latitude": 33.988964,
+      "longitude": -81.189758
+    },
+    {
+      "name": "155:  I-20 W @ Exit 58",
+      "area": "Columbia",
+      "latitude": 33.978444,
+      "longitude": -81.195233
+    },
+    {
+      "name": "156:  I-20 E @ MM 57",
+      "area": "Columbia",
+      "latitude": 33.969972,
+      "longitude": -81.198758
+    },
+    {
+      "name": "157:  I-20 E @ MM 56.5",
+      "area": "Columbia",
+      "latitude": 33.966631,
+      "longitude": -81.206081
+    },
+    {
+      "name": "158:  I-20 E @ MM 55.5",
+      "area": "Columbia",
+      "latitude": 32.876103,
+      "longitude": -80.026647
+    },
+    {
+      "name": "159:  I-20 E @ MM 55",
+      "area": "Columbia",
+      "latitude": 32.83745,
+      "longitude": -80.022575
+    },
+    {
+      "name": "160:  I-20 W @ MM 54",
+      "area": "Columbia",
+      "latitude": 33.95285,
+      "longitude": -81.243447
+    },
+    {
+      "name": "161:  I-20 E @ MM 53",
+      "area": "Columbia",
+      "latitude": 33.942075,
+      "longitude": -81.262181
+    },
+    {
+      "name": "162:  I-20 W @ MM 52.5",
+      "area": "Columbia",
+      "latitude": 33.938619,
+      "longitude": -81.269542
+    },
+    {
+      "name": "163:  I-20 W @ MM 51",
+      "area": "Columbia",
+      "latitude": 33.9272,
+      "longitude": -81.289953
+    },
+    {
+      "name": "164:  I-77 S @ MM 16.5",
+      "area": "Columbia",
+      "latitude": 34.071375,
+      "longitude": -80.925811
+    },
+    {
+      "name": "165:  I-77 S @ MM 17",
+      "area": "Columbia",
+      "latitude": 34.0772,
+      "longitude": -80.934533
+    },
+    {
+      "name": "166:  I-77 S @ Exit 17 (Two Notch Road)",
+      "area": "Columbia",
+      "latitude": 34.082136,
+      "longitude": -80.941439
+    },
+    {
+      "name": "167:  I-77 S @ Exit 19 (Farrow Rd)",
+      "area": "Columbia",
+      "latitude": 34.099725,
+      "longitude": -80.958847
+    },
+    {
+      "name": "168:  I-77 S @ MM 19.5",
+      "area": "Columbia",
+      "latitude": 34.108658,
+      "longitude": -80.962464
+    },
+    {
+      "name": "169:  I-77 S @ MM 20.5",
+      "area": "Columbia",
+      "latitude": 34.120878,
+      "longitude": -80.9627
+    },
+    {
+      "name": "170:  I-77 S @ Exit 22",
+      "area": "Columbia",
+      "latitude": 34.135394,
+      "longitude": -80.963997
+    },
+    {
+      "name": "171:  I-77 S @ MM 22.5",
+      "area": "Columbia",
+      "latitude": 34.146989,
+      "longitude": -80.965414
+    },
+    {
+      "name": "172:  I-77 N @ MM 23.5",
+      "area": "Columbia",
+      "latitude": 34.164983,
+      "longitude": -80.965564
+    },
+    {
+      "name": "173:  I-77 N @ Exit 24 (Wilson Blvd)",
+      "area": "Columbia",
+      "latitude": 34.171361,
+      "longitude": -80.971133
+    },
+    {
+      "name": "174:  I-77 S @ MM 25",
+      "area": "Columbia",
+      "latitude": 34.179975,
+      "longitude": -80.979436
+    },
+    {
+      "name": "175:  I-77 S @ MM 26",
+      "area": "Columbia",
+      "latitude": 34.199075,
+      "longitude": -80.986208
+    },
+    {
+      "name": "176:  I-77 N @ Exit 27 (Blythewood Rd)",
+      "area": "Columbia",
+      "latitude": 34.214006,
+      "longitude": -80.982986
+    },
+    {
+      "name": "1018:  I-26 E @ I-77 N (2)",
+      "area": "Columbia",
+      "latitude": 33.926608,
+      "longitude": -81.070831
+    }
+  ]
+}

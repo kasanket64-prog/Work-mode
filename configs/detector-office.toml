@@ -1,0 +1,7 @@
+# Office trial profile: retain detail resolution with room for up to 40 objects.
+# Includes people, furniture and equipment. Validate speed and false detections.
+model = "yolo11n.pt"
+confidence = 0.25
+iou = 0.7
+image_size = 1280
+max_detections = 40

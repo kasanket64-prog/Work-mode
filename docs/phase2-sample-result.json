@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "attribution": "Based on RelateAnything by Ma\u00eblic Neau \u2014 https://github.com/Maelic/RelateAnything",
+  "status": "predicted",
+  "image": "examples\\horse.jpg",
+  "image_sha256": "549bd965a4ac9aa682f70e40757c5841d160c4e84eb86c2948d5bac5dedecf29",
+  "image_size": [
+    1280,
+    907
+  ],
+  "frame_id": "image-0",
+  "timestamp_seconds": null,
+  "regions": [
+    {
+      "id": "det-0",
+      "box": [
+        124.9798583984375,
+        323.61065673828125,
+        995.7882080078125,
+        862.9993286132812
+      ],
+      "label": "horse",
+      "track_id": null,
+      "detection_score": 0.9279022812843323
+    },
+    {
+      "id": "det-1",
+      "box": [
+        474.0595397949219,
+        135.52337646484375,
+        646.564453125,
+        625.5518188476562
+      ],
+      "label": "person",
+      "track_id": null,
+      "detection_score": 0.7938514947891235
+    },
+    {
+      "id": "det-2",
+      "box": [
+        258.27056884765625,
+        335.3455810546875,
+        297.60455322265625,
+        361.4854736328125
+      ],
+      "label": "car",
+      "track_id": null,
+      "detection_score": 0.4011126160621643
+    }
+  ],
+  "settings": {
+    "model_id": "maelic/relsgg-vits16plus",
+    "model_revision": "2db90096be5217bdc7a9003c042950f45723d105",
+    "device": "cpu",
+    "topk": 5,
+    "max_regions": 60,
+    "min_score": 0.0,
+    "vocabulary": [
+      "riding",
+      "carrying a rider",
+      "beside",
+      "in front of"
+    ]
+  },
+  "upstream_revision": "06766fdf56752ca535fc9b971fca99ce563676d0",
+  "detector": {
+    "settings": {
+      "model": "yolo11n.pt",
+      "confidence": 0.25,
+      "iou": 0.7,
+      "image_size": 640,
+      "max_detections": 20
+    },
+    "device": "cpu",
+    "weights_sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+    "load_and_detection_seconds": 12.835343000000023
+  },
+  "region_source": "detector",
+  "load_seconds": 24.615790000000004,
+  "relations": [
+    {
+      "subject_id": "det-1",
+      "predicate": "riding",
+      "object_id": "det-0",
+      "score": 0.7400432825088501
+    },
+    {
+      "subject_id": "det-0",
+      "predicate": "carrying a rider",
+      "object_id": "det-1",
+      "score": 0.3445959687232971
+    },
+    {
+      "subject_id": "det-0",
+      "predicate": "beside",
+      "object_id": "det-2",
+      "score": 0.2891194522380829
+    },
+    {
+      "subject_id": "det-1",
+      "predicate": "beside",
+      "object_id": "det-2",
+      "score": 0.19039694964885712
+    },
+    {
+      "subject_id": "det-2",
+      "predicate": "beside",
+      "object_id": "det-0",
+      "score": 0.17043720185756683
+    }
+  ],
+  "prediction_seconds": 1.570447999999999,
+  "resolved_device": "cpu"
+}

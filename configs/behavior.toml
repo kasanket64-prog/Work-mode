@@ -1,0 +1,6 @@
+# Candidate dwell observations for fixed-camera footage; tune against labeled clips.
+dwell_seconds = 3.0
+stationary_fraction = 0.01
+min_hits = 3
+max_gap_seconds = 1.5
+pair_distance_change_fraction = 0.03

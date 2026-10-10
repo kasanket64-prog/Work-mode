@@ -1,0 +1,8 @@
+window_seconds = 3.0
+min_hits = 3
+min_duration_seconds = 0.5
+relation_threshold = 0.6
+max_gap_seconds = 1.5
+unattended_seconds = 30.0
+stationary_fraction = 0.02
+person_near_fraction = 0.15

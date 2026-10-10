@@ -1,0 +1,9 @@
+model_id = "maelic/relsgg-vits16plus"
+# Pinned Hugging Face snapshot for repeatable model artifacts.
+model_revision = "2db90096be5217bdc7a9003c042950f45723d105"
+device = "cpu"
+topk = 5
+max_regions = 60
+# Smoke-test ranking only; this is NOT a validated CCTV decision threshold.
+min_score = 0.0
+vocabulary = ["riding", "carrying a rider", "beside", "in front of"]

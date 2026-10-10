@@ -1,0 +1,7 @@
+# Experimental detail profile; validate false positives on your camera before deployment.
+# More expensive than the default profile. Compatible with the 60-region relation limit.
+model = "yolo11n.pt"
+confidence = 0.25
+iou = 0.7
+image_size = 1280
+max_detections = 60
