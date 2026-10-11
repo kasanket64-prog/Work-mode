@@ -76,7 +76,7 @@ def main(argv=None) -> int:
             }
         else:
             regions = parse_regions(
-                json.loads(args.regions.read_text(encoding="utf-8")), image.size
+                json.loads(args.regions.read_text(encoding="utf-8-sig")), image.size
             )
         if len(regions) > settings.max_regions:
             raise ValueError(f"input exceeds max_regions={settings.max_regions}")

@@ -13,7 +13,7 @@ Authoritative files at the pinned revision:
 
 ## Included test photograph
 
-`examples/horse.jpg`: **A horse rider in Maidan , Kolkata.jpg**, by **Subhrajyoti07**, licensed **CC BY-SA 4.0**.
+`examples/horse.jpg` and its unchanged packaged copy `src/camera_system/templates/demo-horse.jpg`: **A horse rider in Maidan , Kolkata.jpg**, by **Subhrajyoti07**, licensed **CC BY-SA 4.0**. The website adds optional HTML region overlays; the photograph itself is unchanged.
 
 - Source: https://commons.wikimedia.org/wiki/File:A_horse_rider_in_Maidan_,_Kolkata.jpg
 - License: https://creativecommons.org/licenses/by-sa/4.0/
