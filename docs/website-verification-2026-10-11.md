@@ -47,3 +47,10 @@ sampled evidence view. Real-world accuracy and public hosting remain unfinished.
 The user plans to explore a Figma design next. Preserve this functional baseline;
 integrate approved desktop/mobile designs without replacing the inference,
 upload, cancellation, review or evaluation contracts.
+
+
+## Homepage usability follow-up
+
+Added an original split hero using the credited demo photograph, illustrated feature cards, clearer benefit copy, workflow strip and FAQ. Uploads now have local image/video previews, removal, and 30/120-frame presets synchronized with the existing sample limit. Workspace cards can be searched by type/date/ID and filtered by status without discarding review inputs. No dependencies or inference behavior changed.
+
+Validation: 137 pytest tests passed, 4 optional tests skipped; Ruff and JavaScript syntax check passed. Browser checks confirmed 120-frame preset, search empty state, active-status filter, loaded image preview and removal. Desktop 1440x1000 and mobile 390x844 inspected; no mobile horizontal overflow. Screenshot: outputs/fieldnote-polished-homepage.jpg (local only). Existing real-inference validation above remains applicable; no new accuracy benchmark or inference run was performed in this UI follow-up. Public hosting remains outstanding.

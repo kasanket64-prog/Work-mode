@@ -146,6 +146,24 @@ function jobCard(job) {
   return card;
 }
 
+function matchesJob(job, query, filter) {
+  const statuses = {active: ['processing', 'cancelling'], attention: ['failed', 'cancelled', 'interrupted']};
+  if (filter !== 'all' && !(statuses[filter] || [filter]).includes(job.status)) return false;
+  const title = job.mode === 'scene' ? 'Scene analysis' : 'Plate reading';
+  return `${title} ${job.id} ${job.created} ${new Date(job.created).toLocaleString()}`.toLowerCase().includes(query.trim().toLowerCase());
+}
+function applyFilters() {
+  let visible = 0;
+  for (const {card, job} of cards.values()) {
+    card.hidden = !matchesJob(job, el('job-search').value, el('job-filter').value);
+    if (!card.hidden) visible++;
+  }
+  el('filter-count').textContent = cards.size ? `${visible} of ${cards.size} analyses` : '';
+  el('no-matches').hidden = !cards.size || visible > 0;
+}
+el('job-search').addEventListener('input', applyFilters);
+el('job-filter').addEventListener('change', applyFilters);
+
 async function refresh() {
   if (refreshing) return;
   refreshing = true;
@@ -167,7 +185,7 @@ async function refresh() {
       if (!entry || entry.signature !== signature) {
         const card = jobCard(job);
         if (entry) {card.querySelectorAll('details').forEach((detail, i) => {detail.open = entry.card.querySelectorAll('details')[i]?.open || false;}); entry.card.replaceWith(card);}
-        entry = {signature, card}; cards.set(job.id, entry);
+        entry = {signature, card, job}; cards.set(job.id, entry);
       }
       const next = previous ? previous.nextElementSibling : el('jobs').firstElementChild;
       if (next !== entry.card) el('jobs').insertBefore(entry.card, next);
@@ -182,6 +200,7 @@ async function refresh() {
       blank.append(node('strong', 'Your next discovery starts here.'), node('span', 'Upload a recording and your findings will appear in this space.'), document.createElement('br'), link);
       el('jobs').append(blank);
     }
+    applyFilters();
     const announcement = jobs.length ? `${jobs.length} analyses. ${activeJob ? 'One is running.' : 'No analysis is running.'}` : 'Your workspace is ready for its first upload.';
     if (el('job-announcement').textContent !== announcement) el('job-announcement').textContent = announcement;
   } catch {
@@ -191,13 +210,34 @@ async function refresh() {
   } finally {refreshing = false; updateStart();}
 }
 
+let previewUrl;
 function fileSelected() {
+  const video = el('preview-video'), image = el('preview-image');
+  video.pause(); video.removeAttribute('src'); video.load(); image.removeAttribute('src');
+  video.hidden = image.hidden = true;
+  if (previewUrl) {URL.revokeObjectURL(previewUrl); previewUrl = null;}
+
   const file = el('file').files[0];
   el('file-title').textContent = file ? file.name : 'Drop your video or image here';
   el('file-caption').textContent = file ? `${(file.size / 1048576).toFixed(1)} MB · click to choose a different file` : 'or browse files on your computer';
   const error = file ? uploadError(file, el('mode').value) : '';
   message(error, Boolean(error));
+  el('file-preview').hidden = !file || Boolean(error);
+  if (file && !error) {
+    previewUrl = URL.createObjectURL(file);
+    const target = /\.(jpe?g|png)$/i.test(file.name) ? image : video;
+    target.src = previewUrl; target.hidden = false;
+    el('preview-note').textContent = 'Preview only. Analysis starts when you choose Analyze footage.';
+  }
 }
+el('preview-video').addEventListener('error', () => {
+  if (previewUrl) el('preview-note').textContent = 'Your browser cannot preview this video. You can still try analyzing it.';
+});
+el('clear-file').addEventListener('click', () => {el('file').value = ''; fileSelected(); el('file').focus();});
+const presets = document.querySelectorAll('[name=preset]');
+presets.forEach(input => input.addEventListener('change', () => {el('limit').value = input.value;}));
+el('limit').addEventListener('input', () => presets.forEach(input => {input.checked = input.value === el('limit').value;}));
+window.addEventListener('pagehide', () => {if (previewUrl) URL.revokeObjectURL(previewUrl);});
 el('file').addEventListener('change', fileSelected);
 el('mode').addEventListener('change', fileSelected);
 el('dropzone').addEventListener('dragover', event => {event.preventDefault(); el('dropzone').classList.add('dragover');});
@@ -215,7 +255,8 @@ el('upload').addEventListener('submit', event => {
   const file = el('file').files[0], error = uploadError(file, el('mode').value);
   if (error) {message(error, true); return;}
   uploading = true; updateStart();
-  for (const id of ['file', 'mode', 'limit']) el(id).disabled = true;
+  for (const id of ['file', 'mode', 'limit', 'clear-file']) el(id).disabled = true;
+  presets.forEach(input => {input.disabled = true;});
   el('progress').value = 0; el('progress').hidden = false;
   message('Uploading to your local workspace…');
   const request = new XMLHttpRequest();
@@ -237,7 +278,8 @@ el('upload').addEventListener('submit', event => {
   request.onerror = () => message('The connection was interrupted. Check your workspace before retrying; the server may have received the upload.', true);
   request.onloadend = () => {
     uploading = false; el('progress').hidden = true;
-    for (const id of ['file', 'mode', 'limit']) el(id).disabled = false;
+    for (const id of ['file', 'mode', 'limit', 'clear-file']) el(id).disabled = false;
+    presets.forEach(input => {input.disabled = false;});
     updateStart(); refresh();
   };
   request.send(file);

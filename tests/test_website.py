@@ -112,3 +112,24 @@ assert.match(uploadError({name:'clip.mp4',size:0}, 'scene'), /not empty/);
 assert.match(uploadError(null, 'scene'), /Choose a/);
 """
     subprocess.run([node, "-e", function + checks], check=True, timeout=10)
+
+def test_workspace_search_and_status_filters():
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is needed for browser logic checks")
+    script = files("camera_system").joinpath("templates/workspace.js").read_text(encoding="utf-8")
+    function = "function matchesJob" + script.split("function matchesJob", 1)[1].split("function applyFilters", 1)[0]
+    checks = """
+const assert = require('node:assert/strict');
+const job = {id:'abc123', mode:'scene', status:'completed', created:'2026-10-11T12:00:00Z'};
+assert(matchesJob(job, ' SCENE ', 'all'));
+assert(matchesJob(job, 'abc123', 'completed'));
+assert(matchesJob(job, '2026-10-11', 'all'));
+assert(!matchesJob(job, 'plate', 'all'));
+assert(!matchesJob(job, '', 'active'));
+assert(matchesJob({...job,status:'cancelling'}, '', 'active'));
+for (const status of ['failed','cancelled','interrupted']) assert(matchesJob({...job,status}, '', 'attention'));
+assert(matchesJob({...job,mode:'plates'}, 'Plate reading', 'all'));
+assert(!matchesJob({...job,status:'unknown'}, '', 'attention'));
+"""
+    subprocess.run([node, "-e", function + checks], check=True, timeout=10)
