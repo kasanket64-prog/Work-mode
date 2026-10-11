@@ -6,6 +6,11 @@ record individual runs rather than the current feature list.
 
 ## Current state
 
+The [Fieldnote website refresh](website-verification-2026-10-11.md) adds an
+interactive real inference example, simplified uploads and original-video
+playback. Verification: **136 lightweight tests passed**, plus a real browser
+upload → inference → review/playback check. Public hosting is not configured.
+
 | Area | Implemented | Still needed |
 | --- | --- | --- |
 | Detection and tracking | YOLO regions, persistent track IDs, optional motion matching | Labeled recall and identity-switch evaluation |

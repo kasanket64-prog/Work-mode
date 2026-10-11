@@ -7,13 +7,21 @@ video and optional plate dependencies:
 .\.venv\Scripts\python.exe -m camera_system.app --port 8780
 ```
 
-Open http://127.0.0.1:8780/. Upload a video or image, choose scene analysis or
+Open http://127.0.0.1:8780/. The Fieldnote homepage includes an interactive saved
+inference example: select a person, horse or relationship note to highlight its
+regions. It uses the real 11 October CPU result with manual regions, works without
+loading model weights, and includes photograph credits and downloadable provenance.
+
+Drop a video or image into the upload area or browse for a file. Open **Analysis
+settings** to choose scene analysis or
 video plate reading, set the maximum sampled frames, and start. When processing
-finishes, open the investigation or download the JSONL result. Scene analysis
+finishes, choose **Explore findings** or download the JSONL result. Scene analysis
 includes detection, tracking, person pose observations, temporal image movement,
 scheduled relationships and the existing candidate-event reasoning.
 
-The job list shows processed frame counts and a Cancel button for active jobs.
+The job list shows preparation/analysis stages, processed frame counts and a
+**Stop analysis** button for active jobs. Progress does not invent a completion
+percentage or time estimate for inference. Upload transfer has its own progress bar.
 Cancellation stops the worker process; partial output remains in the job folder.
 Failed, cancelled and interrupted jobs have a **Retry saved upload** button.
 Retry copies the saved media into a new job, retains the mode and frame limit,
@@ -28,6 +36,26 @@ analyzed. OpenCV cannot reliably distinguish end-of-file from a decode failure,
 so that outcome is shown explicitly. Older outputs without an end reason report
 unknown coverage. **Open processing log** displays worker diagnostics as plain
 text, including for failed jobs, without needing to browse the output folder.
+Coverage and logs are under **Coverage & processing details**.
+
+Video reviews include **Watch the original recording**. Select a sampled frame
+or candidate moment, then use **Jump to selected evidence frame** to seek the
+source recording. Playback does not run inference or imply every frame was
+analyzed. Browser codec support varies; unsupported recordings retain their
+sampled evidence view. The original media route supports seeking with bounded
+byte-range responses and retains the same localhost access checks as results.
+Opening another result file in the review removes the original player so evidence
+from different recordings is not accidentally mixed.
+
+Reviews served by the workspace use the current template and original result
+data; previously saved standalone HTML snapshots remain unchanged. Optional
+vehicle lookups and the reference camera directory are collapsed below the review.
+
+The website remains **local-only**. A localhost address cannot be shared as a
+public website. Public hosting requires a suitable inference server plus upload
+access, storage, retention and resource limits; this redesign does not publish
+your workspace or recordings. All homepage assets are bundled locally, with no
+remote font or image requests.
 
 For a completed scene video, expand **Evaluate against reviewed annotations**
 in its history card. Select a JSON file following the annotation format in
