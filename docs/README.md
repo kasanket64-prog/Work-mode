@@ -1,6 +1,6 @@
 # Project overview
 
-Status snapshot: 10 October 2026. Work-mode is a working local prototype, with
+Status snapshot: 11 October 2026. Work-mode is a working local prototype, with
 unmeasured real-world accuracy. Start with this page; dated verification files
 record individual runs rather than the current feature list.
 
@@ -17,7 +17,11 @@ record individual runs rather than the current feature list.
 | Evaluation | Event/relation scoring, CLI and browser annotation draft download | Independently reviewed ground truth |
 | Publication | Published to GitHub main; all four CI jobs passed | See [publication verification](publication-2026-10-10.md) |
 
-Latest annotation-download checks: **132 passed, four model tests skipped**.
+Latest inference continuation: **133 lightweight tests passed, four model tests
+skipped**; cached pretrained CPU inference also passed. Windows UTF-8 region
+files with a byte-order mark now work. See the [dated verification](inference-verification-2026-10-11.md).
+
+Earlier annotation-download checks: **132 passed, four model tests skipped**.
 The preceding inference verification passed all 129 tests including real models;
 model execution was unchanged by the browser-only feature. Lint and dependency
 checks passed. These verify execution, not recognition accuracy. The six audit

@@ -83,11 +83,12 @@ def test_adapter_rejects_truncation(entries):
         adapter.predict(Image.new("RGB", (100, 100)), regions + regions)
 
 
-def test_cli_validation_and_prediction(tmp_path, entries, monkeypatch, capsys):
+@pytest.mark.parametrize("encoding", ["utf-8", "utf-8-sig"])
+def test_cli_validation_and_prediction(tmp_path, entries, monkeypatch, capsys, encoding):
     image = tmp_path / "image.png"
     Image.new("RGB", (100, 100)).save(image)
     boxes = tmp_path / "regions.json"
-    boxes.write_text(json.dumps(entries))
+    boxes.write_text(json.dumps(entries), encoding=encoding)
     config = tmp_path / "config.toml"
     config.write_text('device = "cpu"\n')
     args = ["--image", str(image), "--regions", str(boxes), "--config", str(config)]
@@ -105,7 +106,7 @@ def test_cli_validation_and_prediction(tmp_path, entries, monkeypatch, capsys):
     result = json.loads(output.read_text())
     assert result["status"] == "predicted" and result["relations"] == []
     assert main(args + ["--output", str(boxes)]) == 2
-    assert json.loads(boxes.read_text()) == entries
+    assert json.loads(boxes.read_text(encoding="utf-8-sig")) == entries
     entries[0]["box"] = [0, 0, 500, 500]
     boxes.write_text(json.dumps(entries))
     fake.reset_mock()
