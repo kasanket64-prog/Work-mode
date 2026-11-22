@@ -30,6 +30,13 @@ def positive(value):
     return value
 
 
+def nonnegative_int(value):
+    value = int(value)
+    if value < 0:
+        raise argparse.ArgumentTypeError("must be a nonnegative integer")
+    return value
+
+
 def emit(stream, record):
     stream.write(json.dumps(record, allow_nan=False) + "\n")
     stream.flush()
@@ -121,6 +128,21 @@ def main(argv=None):
         type=Path,
         help="Save JPEG thumbnails under this directory instead of embedding base64 data URLs",
     )
+    parser.add_argument(
+        "--stream-credentials-env",
+        help="Environment variable containing user:password for authenticated RTSP/HTTP streams",
+    )
+    parser.add_argument(
+        "--live-buffer",
+        action="store_true",
+        help="Use a latest-frame capture thread for live camera/stream sources",
+    )
+    parser.add_argument(
+        "--reconnect-attempts",
+        type=nonnegative_int,
+        default=0,
+        help="Reconnect attempts on live camera/stream read failure",
+    )
     args = parser.parse_args(argv)
     try:
         if not isfinite(args.static_diff_threshold) or not 0 <= args.static_diff_threshold <= 255:
@@ -141,10 +163,19 @@ def main(argv=None):
         reasoning_settings = load_reasoning(args.reasoning_config)
         reasoner = Reasoner(reasoning_settings)
         behavior = BehaviorAnalyzer()
+        source_target = args.stream or (str(args.video) if args.video is not None else args.camera)
+        frame_kwargs = {}
+        if args.stream_credentials_env:
+            frame_kwargs["credentials_env"] = args.stream_credentials_env
+        if args.live_buffer:
+            frame_kwargs["threaded"] = True
+        if args.reconnect_attempts:
+            frame_kwargs["max_reconnects"] = args.reconnect_attempts
         frames = FrameSource(
-            args.stream or (str(args.video) if args.video is not None else args.camera),
+            source_target,
             args.stride,
             network=bool(args.stream),
+            **frame_kwargs,
         )
         effective_stride = args.stride
         with ExitStack() as stack:
@@ -202,7 +233,11 @@ def main(argv=None):
                         "max_age_seconds": args.track_max_age,
                         "motion_prediction": args.track_motion,
                     },
-                    "buffer_policy": "synchronous_no_application_queue",
+                    "buffer_policy": (
+                        "latest_frame_overwrite_thread"
+                        if args.live_buffer
+                        else "synchronous_no_application_queue"
+                    ),
                 },
             )
             try:
@@ -375,6 +410,7 @@ def main(argv=None):
                     "frames_processed": processed,
                     "frames_skipped_by_stride": frames.frames_skipped,
                     "device_dropped_frames": getattr(frames, "dropped_frames", None),
+                    "reconnects": getattr(frames, "reconnects", 0),
                     "elapsed_seconds": time.perf_counter() - start,
                     "error": error,
                 }

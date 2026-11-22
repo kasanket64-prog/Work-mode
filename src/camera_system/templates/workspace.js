@@ -7,6 +7,7 @@ const node = (tag, value, className = '') => {
   return element;
 };
 let uploading = false, activeJob = false, online = false, refreshing = false;
+let eventSource = null;
 const cards = new Map();
 const statusNames = {processing: 'Analyzing', cancelling: 'Stopping', completed: 'Ready to review', failed: 'Needs attention', cancelled: 'Stopped', interrupted: 'Interrupted'};
 
@@ -31,6 +32,30 @@ async function jsonRequest(url, options) {
   const result = await response.json();
   if (!response.ok) throw Error(result.error || 'Something went wrong. Please try again.');
   return result;
+}
+async function loadSystemStatus() {
+  const strip = el('system-status');
+  if (!strip) return;
+  try {
+    const info = await jsonRequest('/api/system/status');
+    strip.replaceChildren();
+    const caps = info.capabilities || {};
+    const mb = ((info.workspace_bytes || 0) / 1048576).toFixed(1);
+    const items = [
+      ['Detection', Boolean(caps.detection)],
+      ['Relations', Boolean(caps.inference)],
+      ['Video', Boolean(caps.video)],
+      ['Plates', Boolean(caps.plates)],
+      ['CUDA', Boolean(caps.cuda)],
+      ['Warm worker', Boolean(info.warm_worker)],
+    ];
+    for (const [label, ready] of items) {
+      strip.append(node('span', `${ready ? '●' : '○'} ${label}`, `status-pill${ready ? ' ready' : ''}`));
+    }
+    strip.append(node('span', `Storage: ${mb} MB · ${info.job_count || 0} saved`, 'status-pill'));
+  } catch {
+    strip.textContent = 'Local runtime status unavailable.';
+  }
 }
 async function loadDemo() {
   try {
@@ -85,6 +110,9 @@ function jobCard(job) {
   const heading = node('div', '', 'job-heading');
   const title = node('div', '');
   title.append(node('span', statusNames[job.status] || job.status, 'status ' + job.status), node('strong', job.mode === 'scene' ? 'Scene analysis' : 'Plate reading'));
+  if (job.evaluation_count > 0) {
+    title.append(document.createTextNode(' '), node('span', `${job.evaluation_count} evaluation${job.evaluation_count === 1 ? '' : 's'}`, 'eval-badge'));
+  }
   const date = node('time', new Date(job.created).toLocaleString());
   date.dateTime = job.created;
   heading.append(title, date);
@@ -94,7 +122,10 @@ function jobCard(job) {
     steps.append(node('span', '✓ Upload ready'), node('span', job.status === 'cancelling' ? 'Stopping analysis…' : job.frames_processed ? '● Understanding your footage' : '● Preparing models', 'current'), node('span', '○ Review findings'));
     card.append(steps);
   }
-  card.append(node('p', `${job.frames_processed || 0} sampled frames processed · ${(job.bytes / 1048576).toFixed(1)} MB`));
+  const metaParts = [`${job.frames_processed || 0} sampled frames processed`, `${(job.bytes / 1048576).toFixed(1)} MB`];
+  if (job.stride) metaParts.push(`stride ${job.stride}`);
+  if (job.reasoning_profile && job.reasoning_profile !== 'default') metaParts.push(job.reasoning_profile);
+  card.append(node('p', metaParts.join(' · ')));
   if (job.status === 'processing' && !job.frames_processed) card.append(node('p', 'The first run can take longer while models load. Keep this window and the local server running.'));
   const actions = node('div', '', 'job-actions');
   if (job.status === 'completed') {
@@ -131,6 +162,36 @@ function jobCard(job) {
     };
     actions.append(retry);
   }
+  if (!['processing', 'cancelling'].includes(job.status)) {
+    const remove = node('button', 'Delete', 'danger-btn');
+    remove.type = 'button';
+    let armed = false;
+    let resetTimer = null;
+    remove.onclick = async () => {
+      if (!armed) {
+        armed = true;
+        remove.textContent = 'Confirm delete';
+        remove.classList.add('confirming');
+        resetTimer = setTimeout(() => {
+          armed = false;
+          remove.textContent = 'Delete';
+          remove.classList.remove('confirming');
+        }, 4000);
+        return;
+      }
+      clearTimeout(resetTimer);
+      remove.disabled = true;
+      try {
+        await jsonRequest('/api/jobs/' + job.id, {method: 'DELETE'});
+        message('Analysis removed from your local workspace.');
+        await Promise.all([refresh(), loadSystemStatus()]);
+      } catch (error) {
+        message(error.message, true);
+        remove.disabled = false;
+      }
+    };
+    actions.append(remove);
+  }
   card.append(actions);
   if (job.error) card.append(node('p', job.error, 'error'));
   const details = node('details', '');
@@ -165,54 +226,84 @@ function applyFilters() {
 el('job-search').addEventListener('input', applyFilters);
 el('job-filter').addEventListener('change', applyFilters);
 
+function applyJobs(jobs) {
+  online = true;
+  const wasActive = activeJob;
+  activeJob = jobs.some(j => ['processing', 'cancelling'].includes(j.status));
+  el('connection').textContent = activeJob ? 'Analysis in progress' : (eventSource && eventSource.readyState === 1 ? 'Live workspace connected' : 'Local workspace connected');
+  el('connection').className = 'connection online';
+  // Keep unchanged cards mounted so updates preserve annotation inputs and review controls.
+  const liveIds = new Set(jobs.map(j => j.id));
+  for (const [id, entry] of cards) if (!liveIds.has(id)) {entry.card.remove(); cards.delete(id);}
+  const empty = el('jobs').querySelector('.empty-state');
+  if (empty && jobs.length) empty.remove();
+  let previous = null;
+  for (const job of jobs) {
+    const signature = JSON.stringify(job);
+    let entry = cards.get(job.id);
+    if (!entry || entry.signature !== signature) {
+      const card = jobCard(job);
+      if (entry) {card.querySelectorAll('details').forEach((detail, i) => {detail.open = entry.card.querySelectorAll('details')[i]?.open || false;}); entry.card.replaceWith(card);}
+      entry = {signature, card, job}; cards.set(job.id, entry);
+    }
+    const next = previous ? previous.nextElementSibling : el('jobs').firstElementChild;
+    if (next !== entry.card) el('jobs').insertBefore(entry.card, next);
+    previous = entry.card;
+  }
+  el('jobs').querySelectorAll('[data-retry]').forEach(button => {button.disabled = activeJob || uploading;});
+  if (!jobs.length && (!empty || !empty.dataset.ready)) {
+    el('jobs').replaceChildren();
+    const blank = node('div', '', 'empty-state');
+    blank.dataset.ready = 'true';
+    const link = node('a', 'Start your first analysis ↗'); link.href = '#analyze';
+    blank.append(node('strong', 'Your next discovery starts here.'), node('span', 'Upload a recording and your findings will appear in this space.'), document.createElement('br'), link);
+    el('jobs').append(blank);
+  }
+  applyFilters();
+  const announcement = jobs.length ? `${jobs.length} analyses. ${activeJob ? 'One is running.' : 'No analysis is running.'}` : 'Your workspace is ready for its first upload.';
+  if (el('job-announcement').textContent !== announcement) el('job-announcement').textContent = announcement;
+  if (wasActive && !activeJob) loadSystemStatus();
+  updateStart();
+}
+
 async function refresh() {
   if (refreshing) return;
   refreshing = true;
   try {
     const jobs = await jsonRequest('/api/jobs');
-    online = true;
-    activeJob = jobs.some(j => ['processing', 'cancelling'].includes(j.status));
-    el('connection').textContent = activeJob ? 'Analysis in progress' : 'Local workspace connected';
-    el('connection').className = 'connection online';
-    // Keep unchanged cards mounted so polling preserves annotation inputs and review controls.
-    const liveIds = new Set(jobs.map(j => j.id));
-    for (const [id, entry] of cards) if (!liveIds.has(id)) {entry.card.remove(); cards.delete(id);}
-    const empty = el('jobs').querySelector('.empty-state');
-    if (empty && jobs.length) empty.remove();
-    let previous = null;
-    for (const job of jobs) {
-      const signature = JSON.stringify(job);
-      let entry = cards.get(job.id);
-      if (!entry || entry.signature !== signature) {
-        const card = jobCard(job);
-        if (entry) {card.querySelectorAll('details').forEach((detail, i) => {detail.open = entry.card.querySelectorAll('details')[i]?.open || false;}); entry.card.replaceWith(card);}
-        entry = {signature, card, job}; cards.set(job.id, entry);
-      }
-      const next = previous ? previous.nextElementSibling : el('jobs').firstElementChild;
-      if (next !== entry.card) el('jobs').insertBefore(entry.card, next);
-      previous = entry.card;
-    }
-    el('jobs').querySelectorAll('[data-retry]').forEach(button => {button.disabled = activeJob || uploading;});
-    if (!jobs.length && (!empty || !empty.dataset.ready)) {
-      el('jobs').replaceChildren();
-      const blank = node('div', '', 'empty-state');
-      blank.dataset.ready = 'true';
-      const link = node('a', 'Start your first analysis ↗'); link.href = '#analyze';
-      blank.append(node('strong', 'Your next discovery starts here.'), node('span', 'Upload a recording and your findings will appear in this space.'), document.createElement('br'), link);
-      el('jobs').append(blank);
-    }
-    applyFilters();
-    const announcement = jobs.length ? `${jobs.length} analyses. ${activeJob ? 'One is running.' : 'No analysis is running.'}` : 'Your workspace is ready for its first upload.';
-    if (el('job-announcement').textContent !== announcement) el('job-announcement').textContent = announcement;
+    applyJobs(jobs);
   } catch {
     online = false;
     el('connection').textContent = 'Disconnected · reconnecting automatically';
     el('connection').className = 'connection error';
-  } finally {refreshing = false; updateStart();}
+    updateStart();
+  } finally {refreshing = false;}
+}
+
+function connectEvents() {
+  if (typeof EventSource === 'undefined') return;
+  try {
+    eventSource = new EventSource('/api/events');
+    eventSource.addEventListener('jobs', event => {
+      try {
+        applyJobs(JSON.parse(event.data));
+      } catch {}
+    });
+    eventSource.onerror = () => {
+      if (eventSource) {eventSource.close(); eventSource = null;}
+    };
+  } catch {
+    eventSource = null;
+  }
 }
 
 let previewUrl;
+function updateModeUI() {
+  const wrap = el('crops-wrap');
+  if (wrap) wrap.hidden = el('mode').value !== 'plates';
+}
 function fileSelected() {
+  updateModeUI();
   const video = el('preview-video'), image = el('preview-image');
   video.pause(); video.removeAttribute('src'); video.load(); image.removeAttribute('src');
   video.hidden = image.hidden = true;
@@ -238,7 +329,7 @@ el('clear-file').addEventListener('click', () => {el('file').value = ''; fileSel
 const presets = document.querySelectorAll('[name=preset]');
 presets.forEach(input => input.addEventListener('change', () => {el('limit').value = input.value;}));
 el('limit').addEventListener('input', () => presets.forEach(input => {input.checked = input.value === el('limit').value;}));
-window.addEventListener('pagehide', () => {if (previewUrl) URL.revokeObjectURL(previewUrl);});
+window.addEventListener('pagehide', () => {if (previewUrl) URL.revokeObjectURL(previewUrl); if (eventSource) eventSource.close();});
 el('file').addEventListener('change', fileSelected);
 el('mode').addEventListener('change', fileSelected);
 el('dropzone').addEventListener('dragover', event => {event.preventDefault(); el('dropzone').classList.add('dragover');});
@@ -256,7 +347,8 @@ el('upload').addEventListener('submit', event => {
   const file = el('file').files[0], error = uploadError(file, el('mode').value);
   if (error) {message(error, true); return;}
   uploading = true; updateStart();
-  for (const id of ['file', 'mode', 'limit', 'clear-file']) el(id).disabled = true;
+  const controlIds = ['file', 'mode', 'limit', 'clear-file', 'stride', 'profile', 'device', 'vehicle-crops'];
+  for (const id of controlIds) if (el(id)) el(id).disabled = true;
   presets.forEach(input => {input.disabled = true;});
   el('progress').value = 0; el('progress').hidden = false;
   message('Uploading to your local workspace…');
@@ -268,6 +360,10 @@ el('upload').addEventListener('submit', event => {
   request.setRequestHeader('X-File-Extension', ext);
   request.setRequestHeader('X-Analysis-Mode', el('mode').value);
   request.setRequestHeader('X-Frame-Limit', el('limit').value);
+  if (el('stride')) request.setRequestHeader('X-Frame-Stride', el('stride').value);
+  if (el('profile')) request.setRequestHeader('X-Reasoning-Profile', el('profile').value);
+  if (el('device')) request.setRequestHeader('X-Device', el('device').value);
+  if (el('vehicle-crops')) request.setRequestHeader('X-Vehicle-Crops', el('vehicle-crops').checked ? '1' : '0');
   request.upload.onprogress = e => {if (e.lengthComputable) {el('progress').value = e.loaded / e.total * 100; if (e.loaded === e.total) message('Upload received. Starting your analysis…');}};
   request.onload = () => {
     try {
@@ -281,16 +377,24 @@ el('upload').addEventListener('submit', event => {
   request.onerror = () => message('The connection was interrupted. Check your workspace before retrying; the server may have received the upload.', true);
   request.onloadend = () => {
     uploading = false; el('progress').hidden = true;
-    for (const id of ['file', 'mode', 'limit', 'clear-file']) el(id).disabled = false;
+    for (const id of controlIds) if (el(id)) el(id).disabled = false;
     presets.forEach(input => {input.disabled = false;});
-    updateStart(); refresh();
+    updateStart(); refresh(); loadSystemStatus();
   };
   request.send(file);
 });
 loadDemo();
+loadSystemStatus();
+updateModeUI();
 updateStart();
 refresh();
-setInterval(refresh, 3000);
+connectEvents();
+setInterval(() => {
+  if (!eventSource || eventSource.readyState === 2) {
+    refresh();
+    if (!eventSource) connectEvents();
+  }
+}, 3000);
 
 function addEvaluation(card,job){
 const details=node('details','');details.append(node('summary','Evaluate against reviewed annotations'));
@@ -299,6 +403,6 @@ const label=node('label','Annotations JSON');const input=document.createElement(
 const output=node('pre','');output.setAttribute('role','status');output.style.whiteSpace='pre-wrap';
 const download=node('button','Download metrics');download.type='button';download.hidden=true;let metrics=null;
 download.onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(metrics,null,2)],{type:'application/json'}));const link=node('a','');link.href=url;link.download='metrics-'+job.id+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
-input.onchange=async()=>{const file=input.files[0];if(!file)return;download.hidden=true;if(file.size>262144){output.textContent='Annotations must be smaller than 256 KB.';return;}input.disabled=true;output.textContent='Evaluating…';try{const response=await fetch('/api/jobs/'+job.id+'/evaluate',{method:'POST',headers:{'Content-Type':'application/json'},body:await file.text()});const result=await response.json();if(!response.ok)throw Error(result.error||'Evaluation failed');metrics=result;output.textContent=JSON.stringify(result,null,2);download.hidden=false;}catch(error){output.textContent=error.message;}finally{input.disabled=false;}};
+input.onchange=async()=>{const file=input.files[0];if(!file)return;download.hidden=true;if(file.size>262144){output.textContent='Annotations must be smaller than 256 KB.';return;}input.disabled=true;output.textContent='Evaluating…';try{const response=await fetch('/api/jobs/'+job.id+'/evaluate',{method:'POST',headers:{'Content-Type':'application/json'},body:await file.text()});const result=await response.json();if(!response.ok)throw Error(result.error||'Evaluation failed');metrics=result;output.textContent=JSON.stringify(result,null,2);download.hidden=false;refresh();}catch(error){output.textContent=error.message;}finally{input.disabled=false;}};
 details.append(help,label,output,download);card.append(details);
 }
