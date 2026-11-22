@@ -1,6 +1,7 @@
 """Upload, warm-worker orchestration, SQLite persistence, SSE progress, and review workspace."""
 
 import argparse
+import hashlib
 import hmac
 import importlib.util
 import json
@@ -14,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
+from math import isfinite
 from pathlib import Path
 from threading import Condition, Lock, Thread
 from urllib.parse import parse_qs, urlsplit
@@ -21,6 +23,7 @@ from uuid import uuid4
 
 from .reasoning import ReasoningSettings, load_reasoning
 from .replay import replay
+from .report import compute_wall_clock, render_case_report_html, search_evidence
 from .review import HTML, annotation_template, evaluate, read_records
 from .store import WorkspaceStore
 from .vehicles import lookup
@@ -434,6 +437,12 @@ class Jobs:
                 "reasoning_profile": previous.get("reasoning_profile", "default"),
                 "vehicle_crops": bool(previous.get("vehicle_crops", False)),
                 "device": previous.get("device", "cpu"),
+                "source_sha256": previous.get("source_sha256"),
+                "case_id": previous.get("case_id"),
+                "camera_label": previous.get("camera_label"),
+                "original_filename": previous.get("original_filename"),
+                "recorded_start_iso": previous.get("recorded_start_iso"),
+                "clock_offset_seconds": previous.get("clock_offset_seconds", 0.0),
                 "created": datetime.now(timezone.utc).isoformat(),
                 "bytes": source.stat().st_size,
                 "retry_of": key,
@@ -895,6 +904,110 @@ def make_app(
                 return self.respond(200, _system_status(jobs, workspace, bool(auth_token)))
             if path == "/api/zones":
                 return self.respond(200, {"zones": jobs.store.list_zones()})
+            if path == "/api/cases":
+                with jobs.lock:
+                    snapshot_jobs = list(jobs.items.values())
+                enriched = []
+                for case in jobs.store.list_cases():
+                    cid = case["id"]
+                    bms = jobs.store.list_bookmarks(case_id=cid)
+                    enriched.append(
+                        {
+                            **case,
+                            "job_count": sum(1 for j in snapshot_jobs if j.get("case_id") == cid),
+                            "bookmark_count": len(bms),
+                        }
+                    )
+                return self.respond(200, {"cases": enriched})
+            case_detail = re.fullmatch(r"/api/cases/([A-Za-z0-9_-]{1,40})", path)
+            if case_detail:
+                cid = case_detail[1]
+                case = jobs.store.get_case(cid)
+                if case is None:
+                    return self.respond(404, {"error": "Case not found"})
+                case_jobs = [j for j in jobs.snapshot() if j.get("case_id") == cid]
+                return self.respond(
+                    200,
+                    {
+                        "case": case,
+                        "jobs": case_jobs,
+                        "bookmarks": jobs.store.list_bookmarks(case_id=cid),
+                        "entities": jobs.store.list_entities(cid),
+                    },
+                )
+            case_report = re.fullmatch(r"/cases/([A-Za-z0-9_-]{1,40})/report", path)
+            if case_report:
+                cid = case_report[1]
+                case = jobs.store.get_case(cid)
+                if case is None:
+                    return self.respond(404, {"error": "Case not found"})
+                case_jobs = [j for j in jobs.snapshot() if j.get("case_id") == cid]
+                verdicts_by_job = {j["id"]: jobs.store.get_verdicts(j["id"]) for j in case_jobs}
+                bookmarks = jobs.store.list_bookmarks(case_id=cid)
+                entities = jobs.store.list_entities(cid)
+                jobs.store.append_audit("report_exported", "case", cid, {"job_count": len(case_jobs)})
+                chain_valid, chain_count = jobs.store.verify_audit_chain()
+                report_html = render_case_report_html(
+                    case,
+                    case_jobs,
+                    verdicts_by_job,
+                    bookmarks,
+                    entities,
+                    jobs.store.list_audit(limit=50),
+                    chain_valid,
+                    chain_count,
+                )
+                return self.respond(200, report_html.encode("utf-8"), "text/html; charset=utf-8")
+            job_bms = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/bookmarks", path)
+            if job_bms:
+                return self.respond(200, {"bookmarks": jobs.store.list_bookmarks(job_id=job_bms[1])})
+            case_bms = re.fullmatch(r"/api/cases/([A-Za-z0-9_-]{1,40})/bookmarks", path)
+            if case_bms:
+                return self.respond(
+                    200, {"bookmarks": jobs.store.list_bookmarks(case_id=case_bms[1])}
+                )
+            case_ents = re.fullmatch(r"/api/cases/([A-Za-z0-9_-]{1,40})/entities", path)
+            if case_ents:
+                return self.respond(200, {"entities": jobs.store.list_entities(case_ents[1])})
+            if path == "/api/search":
+                qs = parse_qs(urlsplit(self.path).query)
+                with jobs.lock:
+                    snapshot_jobs = list(jobs.items.values())
+                lim = 100
+                if "limit" in qs:
+                    try:
+                        lim = int(qs["limit"][0])
+                    except ValueError:
+                        lim = 100
+                hits = search_evidence(
+                    jobs.root,
+                    snapshot_jobs,
+                    query=qs.get("q", [""])[0],
+                    case_id=qs.get("case_id", [""])[0] or None,
+                    object_label=qs.get("label", [""])[0] or None,
+                    color=qs.get("color", [""])[0] or None,
+                    plate=qs.get("plate", [""])[0] or None,
+                    event_type=qs.get("event_type", [""])[0] or None,
+                    limit=lim,
+                )
+                return self.respond(200, {"results": hits})
+            if path == "/api/audit":
+                valid, count = jobs.store.verify_audit_chain()
+                qs = parse_qs(urlsplit(self.path).query)
+                lim = 100
+                if "limit" in qs:
+                    try:
+                        lim = int(qs["limit"][0])
+                    except ValueError:
+                        lim = 100
+                return self.respond(
+                    200,
+                    {
+                        "chain_valid": valid,
+                        "chain_count": count,
+                        "entries": jobs.store.list_audit(limit=lim),
+                    },
+                )
             verdicts_match = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/verdicts", path)
             if verdicts_match:
                 return self.respond(200, {"verdicts": jobs.store.get_verdicts(verdicts_match[1])})
@@ -974,17 +1087,122 @@ def make_app(
                 key = job_match[1]
                 try:
                     freed = jobs.delete(key)
+                    jobs.store.append_audit("job_deleted", "job", key, {"freed_bytes": freed})
                     return self.respond(200, {"deleted": key, "freed_bytes": freed})
                 except KeyError:
                     return self.respond(404, {"error": "Analysis not found"})
                 except ValueError as exc:
                     return self.respond(409, {"error": str(exc)})
+            case_del = re.fullmatch(r"/api/cases/([A-Za-z0-9_-]{1,40})", path)
+            if case_del:
+                cid = case_del[1]
+                if not jobs.store.delete_case(cid):
+                    return self.respond(404, {"error": "Case not found"})
+                with jobs.lock:
+                    for item in jobs.items.values():
+                        if item.get("case_id") == cid:
+                            item["case_id"] = None
+                            jobs.save(item)
+                jobs.store.append_audit("case_deleted", "case", cid)
+                jobs.bus.notify()
+                return self.respond(200, {"deleted": cid})
+            bm_del = re.fullmatch(r"/api/bookmarks/(\d{1,12})", path)
+            if bm_del:
+                bid = int(bm_del[1])
+                if jobs.store.delete_bookmark(bid):
+                    jobs.store.append_audit("bookmark_deleted", "bookmark", str(bid))
+                    return self.respond(200, {"deleted": bid})
+                return self.respond(404, {"error": "Bookmark not found"})
+            ent_del = re.fullmatch(r"/api/entities/(\d{1,12})", path)
+            if ent_del:
+                eid = int(ent_del[1])
+                if jobs.store.delete_entity(eid):
+                    jobs.store.append_audit("entity_deleted", "entity", str(eid))
+                    return self.respond(200, {"deleted": eid})
+                return self.respond(404, {"error": "Entity not found"})
             zone_match = re.fullmatch(r"/api/zones/([A-Za-z0-9_-]{1,40})", path)
             if zone_match:
                 if jobs.store.delete_zone(zone_match[1]):
                     return self.respond(200, {"deleted": zone_match[1]})
                 return self.respond(404, {"error": "Zone not found"})
             self.respond(404, {"error": "Not found"})
+
+        def do_PATCH(self):
+            if not self.local(write=True):
+                self.close_connection = True
+                return self.respond(403, {"error": "Same-origin local access required"})
+            try:
+                self.connection.settimeout(30)
+                path = urlsplit(self.path).path
+                job_meta = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/metadata", path)
+                if job_meta:
+                    key = job_meta[1]
+                    payload = self._read_json_body(65536)
+                    if not isinstance(payload, dict):
+                        raise ValueError("Expected JSON metadata object.")
+                    with jobs.lock:
+                        item = jobs.items.get(key)
+                        if item is None:
+                            return self.respond(404, {"error": "Analysis not found"})
+                        updated = dict(item)
+                    if "case_id" in payload:
+                        cid = payload["case_id"]
+                        if cid is not None:
+                            cid = str(cid).strip() or None
+                        if cid is not None and jobs.store.get_case(cid) is None:
+                            raise ValueError("Selected case does not exist.")
+                        updated["case_id"] = cid
+                    if "camera_label" in payload:
+                        lbl = payload["camera_label"]
+                        updated["camera_label"] = (str(lbl).strip()[:100] or None) if lbl is not None else None
+                    if "recorded_start_iso" in payload:
+                        raw_start = payload["recorded_start_iso"]
+                        if raw_start is None or not str(raw_start).strip():
+                            updated["recorded_start_iso"] = None
+                        else:
+                            txt = str(raw_start).strip()[:40]
+                            iso_check = txt[:-1] + "+00:00" if txt.endswith("Z") else txt
+                            datetime.fromisoformat(iso_check)
+                            updated["recorded_start_iso"] = txt
+                    if "clock_offset_seconds" in payload:
+                        off = payload["clock_offset_seconds"]
+                        val = 0.0 if off is None else float(off)
+                        if not isfinite(val) or not -86400 <= val <= 86400:
+                            raise ValueError("clock_offset_seconds must be within [-86400, 86400].")
+                        updated["clock_offset_seconds"] = val
+                    with jobs.lock:
+                        jobs.items[key] = updated
+                        jobs.save(updated)
+                    jobs.store.append_audit(
+                        "job_metadata_updated",
+                        "job",
+                        key,
+                        {
+                            "case_id": updated.get("case_id"),
+                            "camera_label": updated.get("camera_label"),
+                        },
+                    )
+                    jobs.bus.notify()
+                    return self.respond(200, updated)
+                case_patch = re.fullmatch(r"/api/cases/([A-Za-z0-9_-]{1,40})", path)
+                if case_patch:
+                    cid = case_patch[1]
+                    payload = self._read_json_body(65536)
+                    try:
+                        saved = jobs.store.update_case(cid, payload)
+                    except KeyError:
+                        return self.respond(404, {"error": "Case not found"})
+                    jobs.store.append_audit("case_updated", "case", cid, {"status": saved["status"]})
+                    return self.respond(200, {"case": saved})
+                return self.respond(404, {"error": "Not found"})
+            except (BrokenPipeError, ConnectionResetError):
+                self.close_connection = True
+            except (ValueError, TypeError) as exc:
+                self.close_connection = True
+                self.respond(400, {"error": str(exc)})
+            except OSError:
+                self.close_connection = True
+                self.respond(400, {"error": "Local file or connection error while processing request."})
 
         def do_PUT(self):
             if not self.local(write=True):
@@ -1002,6 +1220,9 @@ def make_app(
                     if not isinstance(payload, dict) or not isinstance(payload.get("verdicts"), dict):
                         raise ValueError("Expected JSON object with verdicts dictionary.")
                     saved = jobs.store.set_verdicts(key, payload["verdicts"])
+                    jobs.store.append_audit(
+                        "verdicts_saved", "job", key, {"count": len(saved)}
+                    )
                     jobs.bus.notify()
                     return self.respond(200, {"verdicts": saved})
                 ann_match = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/annotations", path)
@@ -1038,6 +1259,64 @@ def make_app(
                     payload = json.loads(self.rfile.read(length))
                     zone = jobs.store.upsert_zone(payload)
                     return self.respond(200, {"zone": zone, "zones": jobs.store.list_zones()})
+                if path == "/api/cases":
+                    if length > 32768 or self.headers.get_content_type() != "application/json":
+                        raise ValueError("Case payload must be small JSON")
+                    payload = json.loads(self.rfile.read(length))
+                    created = jobs.store.create_case(payload)
+                    jobs.store.append_audit(
+                        "case_created",
+                        "case",
+                        created["id"],
+                        {"case_number": created["case_number"], "title": created["title"]},
+                    )
+                    return self.respond(201, {"case": created})
+                job_bm_post = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/bookmarks", path)
+                if job_bm_post:
+                    if length > 32768 or self.headers.get_content_type() != "application/json":
+                        raise ValueError("Bookmark must be small JSON")
+                    key = job_bm_post[1]
+                    with jobs.lock:
+                        item = jobs.items.get(key)
+                    if item is None and not (jobs.root / key / "result.jsonl").is_file():
+                        return self.respond(404, {"error": "Analysis not found"})
+                    payload = json.loads(self.rfile.read(length))
+                    if isinstance(payload, dict) and item is not None:
+                        if "case_id" not in payload and item.get("case_id"):
+                            payload = dict(payload, case_id=item["case_id"])
+                        if "wall_clock" not in payload and item.get("recorded_start_iso"):
+                            ts_val = payload.get("timestamp_seconds")
+                            if type(ts_val) in (int, float) and isfinite(ts_val):
+                                payload = dict(
+                                    payload,
+                                    wall_clock=compute_wall_clock(
+                                        item["recorded_start_iso"],
+                                        float(ts_val),
+                                        float(item.get("clock_offset_seconds") or 0.0),
+                                    ),
+                                )
+                    bm = jobs.store.add_bookmark(key, payload)
+                    jobs.store.append_audit(
+                        "bookmark_added",
+                        "job",
+                        key,
+                        {"bookmark_id": bm["id"], "tag": bm["tag"], "frame": bm["frame_index"]},
+                    )
+                    return self.respond(201, {"bookmark": bm})
+                case_ent_post = re.fullmatch(r"/api/cases/([A-Za-z0-9_-]{1,40})/entities", path)
+                if case_ent_post:
+                    if length > 65536 or self.headers.get_content_type() != "application/json":
+                        raise ValueError("Entity dossier must be small JSON")
+                    cid = case_ent_post[1]
+                    payload = json.loads(self.rfile.read(length))
+                    try:
+                        ent = jobs.store.upsert_entity(cid, payload)
+                    except KeyError:
+                        return self.respond(404, {"error": "Case or entity not found"})
+                    jobs.store.append_audit(
+                        "entity_updated", "case", cid, {"entity_id": ent["id"], "label": ent["label"]}
+                    )
+                    return self.respond(201, {"entity": ent})
                 replay_match = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/replay", path)
                 if replay_match:
                     if length > 32768 or self.headers.get_content_type() != "application/json":
@@ -1086,6 +1365,12 @@ def make_app(
                         if key in jobs.items:
                             jobs.items[key].pop("progress", None)
                             jobs.save(jobs.items[key])
+                    jobs.store.append_audit(
+                        "job_replayed",
+                        "job",
+                        key,
+                        {"zones_count": len(settings.zones)},
+                    )
                     jobs.bus.notify()
                     events_count = sum(
                         len(r.get("events", [])) for r in linked_rows if r.get("type") == "frame"
@@ -1188,6 +1473,26 @@ def make_app(
                 vehicle_crops = crops_hdr in {"1", "true"}
                 if mode == "plates" and extension in IMAGES:
                     raise ValueError("Plate mode currently needs a video")
+                case_id_hdr = self.headers.get("X-Case-Id", "").strip() or None
+                if case_id_hdr is not None and jobs.store.get_case(case_id_hdr) is None:
+                    raise ValueError("Selected case does not exist.")
+                camera_label_hdr = self.headers.get("X-Camera-Label", "").strip()[:100] or None
+                raw_orig_name = self.headers.get("X-Original-Filename", "").strip()
+                orig_name_hdr = (
+                    Path(raw_orig_name.replace("\\", "/")).name[:160] or None
+                    if raw_orig_name
+                    else None
+                )
+                raw_rec_start = self.headers.get("X-Recorded-Start", "").strip()[:40] or None
+                if raw_rec_start is not None:
+                    iso_chk = raw_rec_start[:-1] + "+00:00" if raw_rec_start.endswith("Z") else raw_rec_start
+                    datetime.fromisoformat(iso_chk)
+                raw_offset = self.headers.get("X-Clock-Offset", "").strip()
+                clock_offset = 0.0
+                if raw_offset:
+                    clock_offset = float(raw_offset)
+                    if not isfinite(clock_offset) or not -86400 <= clock_offset <= 86400:
+                        raise ValueError("X-Clock-Offset must be within [-86400, 86400] seconds")
                 with jobs.lock:
                     if jobs.active:
                         self.close_connection = True
@@ -1200,12 +1505,14 @@ def make_app(
                 try:
                     folder.mkdir()
                     source = folder / ("input" + extension)
+                    sha256 = hashlib.sha256()
                     with source.open("xb") as stream:
                         remaining = length
                         while remaining:
                             chunk = self.rfile.read(min(1024 * 1024, remaining))
                             if not chunk:
                                 raise ValueError("Upload ended early")
+                            sha256.update(chunk)
                             stream.write(chunk)
                             remaining -= len(chunk)
                     if strict_uploads or not loopback_only:
@@ -1219,12 +1526,29 @@ def make_app(
                         "reasoning_profile": profile,
                         "vehicle_crops": vehicle_crops,
                         "device": device_hdr,
+                        "source_sha256": sha256.hexdigest(),
+                        "case_id": case_id_hdr,
+                        "camera_label": camera_label_hdr,
+                        "original_filename": orig_name_hdr,
+                        "recorded_start_iso": raw_rec_start,
+                        "clock_offset_seconds": clock_offset,
                         "created": datetime.now(timezone.utc).isoformat(),
                         "bytes": length,
                     }
                     with jobs.lock:
                         jobs.items[key] = item
                         jobs.save(item)
+                    jobs.store.append_audit(
+                        "media_ingested",
+                        "job",
+                        key,
+                        {
+                            "sha256": item["source_sha256"],
+                            "case_id": case_id_hdr,
+                            "camera_label": camera_label_hdr,
+                            "bytes": length,
+                        },
+                    )
                     jobs.bus.notify()
                     jobs.worker = Thread(target=jobs.run, args=(item, source), daemon=True)
                     jobs.worker.start()

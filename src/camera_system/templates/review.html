@@ -99,15 +99,23 @@ pre{font:11.5px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:an
 .metric-box{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center}
 .metric-box b{display:block;font-size:20px;color:var(--lime)}
 .canvas-draw{cursor:crosshair}
+.custody-banner{margin-top:14px;padding:11px 15px;border:1px solid var(--line);background:var(--paper);border-radius:10px;display:flex;flex-wrap:wrap;gap:10px 18px;font:12px/1.4 ui-monospace,monospace;color:var(--muted)}
+.custody-banner strong{color:var(--teal)}
+.optics-bar{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;font-size:12px;color:var(--muted)}
+.optics-bar label{display:inline-flex;align-items:center;gap:6px}
+.optics-bar input[type=range]{width:92px}
+.optics-bar button{padding:6px 10px;font-size:11.5px}
+.pin-form{display:grid;grid-template-columns:160px 1fr auto;gap:8px;margin-bottom:12px}
 @media(max-width:1100px){.shell{grid-template-columns:170px 1fr}.sidebar{padding:24px 14px}main{padding:22px}.layout{grid-template-columns:1fr}.stack{grid-template-columns:1fr 1fr}}
-@media(max-width:650px){.shell{display:block}.sidebar{padding:15px 20px;display:block;border-right:0;border-bottom:1px solid var(--line)}.sidebar .navitem,.sidebar p,.sidefoot{display:none}.brand small{display:inline;margin-left:12px}main{padding:18px}.top{display:block}.top h1{font-size:27px}.tools{margin-top:15px;gap:7px}.tools button,.tools .file{font-size:11px}.stats{grid-template-columns:repeat(2,1fr)}.stack{grid-template-columns:1fr}.controlrow{flex-wrap:wrap}.workspace-back{margin-bottom:8px}.panelhead{flex-wrap:wrap}.extra-tools{margin:18px}.grid2,.metrics-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.shell{display:block}.sidebar{padding:15px 20px;display:block;border-right:0;border-bottom:1px solid var(--line)}.sidebar .navitem,.sidebar p,.sidefoot{display:none}.brand small{display:inline;margin-left:12px}main{padding:18px}.top{display:block}.top h1{font-size:27px}.tools{margin-top:15px;gap:7px}.tools button,.tools .file{font-size:11px}.stats{grid-template-columns:repeat(2,1fr)}.stack{grid-template-columns:1fr}.controlrow{flex-wrap:wrap}.workspace-back{margin-bottom:8px}.panelhead{flex-wrap:wrap}.extra-tools{margin:18px}.grid2,.metrics-grid,.pin-form{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style></head>
 <body><div class="shell"><aside class="sidebar"><a class="workspace-back" href="/" id="workspaceBack" hidden>← Your workspace</a><div class="brand">FIELDNOTE<small>VISUAL OBSERVATIONS</small></div><div class="navitem">◉ &nbsp; Scene review</div><p>Inspect a moment.<br>Follow the evidence.<br>Keep uncertainty visible.</p><div class="sidefoot">Local research prototype<br><br>Based on RelateAnything by Maëlic Neau<br><a href="https://github.com/Maelic/RelateAnything">Upstream project ↗</a></div></aside>
 <main><header class="top"><div><div class="eyebrow">Workspace / Visual intelligence</div><h1>A closer look.</h1><p>People, interactions and changes across time.</p></div><div class="tools"><label class="file">Open results<input id="open" type="file" accept=".json,.jsonl" aria-label="Open result file"></label><button id="export">Export JSON</button><button id="annotations" disabled title="Requires a tracked video session">Download annotation draft</button></div></header>
 <div id="error" role="alert" class="error hidden"></div><div id="notice" class="notice"></div>
+<div id="custodyBanner" class="custody-banner hidden"></div>
 <div class="stats"><div class="stat"><span>REVIEW STATUS</span><b id="status">—</b></div><div class="stat"><span>PROCESSED FRAMES</span><b id="count">0</b></div><div class="stat"><span>PEOPLE IN THIS FRAME</span><b id="peopleCount">0</b></div><div class="stat"><span>CANDIDATE EVENTS</span><b id="eventCount">0</b></div></div>
-<div class="layout"><div><section class="panel"><div class="panelhead"><h2>Your evidence frame</h2><span id="sourceBadge" class="pill">Session</span></div><div class="stage"><canvas id="scene" width="1200" height="750" aria-label="Frame image with detected regions and pose landmarks"></canvas><div class="stagecaption" id="canvasCaption">BOX LAYOUT</div></div><div class="controls"><label class="eyebrow" for="frame">Frame timeline</label><input id="frame" type="range" min="0" value="0"><div class="controlrow"><div><button id="previous" aria-label="Previous frame">←</button> <button id="next" aria-label="Next frame">→</button></div><span id="position" class="position"></span><div class="toggles"><label><input id="boxes" type="checkbox" checked> Boxes</label><label><input id="pose" type="checkbox" checked> Pose</label></div></div></div></section><div class="foot">Image movement is not physical speed. Model scores are not measured accuracy. Shortcuts: ←/→ frame · Space play/pause · B boxes · P pose · 1/2/3/0 verdict</div><details><summary>Inspect frame data</summary><pre id="details"></pre></details></div>
+<div class="layout"><div><section class="panel"><div class="panelhead"><h2>Your evidence frame</h2><span id="sourceBadge" class="pill">Session</span></div><div class="stage"><canvas id="scene" width="1200" height="750" aria-label="Frame image with detected regions and pose landmarks"></canvas><div class="stagecaption" id="canvasCaption">BOX LAYOUT</div></div><div class="controls"><label class="eyebrow" for="frame">Frame timeline</label><input id="frame" type="range" min="0" value="0"><div class="controlrow"><div><button id="previous" aria-label="Previous frame">←</button> <button id="next" aria-label="Next frame">→</button></div><span id="position" class="position"></span><div class="toggles"><label><input id="boxes" type="checkbox" checked> Boxes</label><label><input id="pose" type="checkbox" checked> Pose</label></div></div><div class="optics-bar"><label>Zoom <input id="zoom" type="range" min="1" max="4" step="0.25" value="1"><span id="zoomVal">1.0×</span></label><label>Bright <input id="brightness" type="range" min="50" max="200" step="10" value="100"></label><label>Contrast <input id="contrast" type="range" min="50" max="200" step="10" value="100"></label><button id="resetOptics" type="button">Reset view</button><button id="redactBtn" type="button">Draw redaction mask</button><button id="clearRedact" type="button">Clear masks</button><button id="snapshotPng" type="button">Export snapshot PNG</button></div></div></section><div class="foot">Image movement is not physical speed. Model scores are not measured accuracy. Shortcuts: ←/→ frame · Space play/pause · B boxes · P pose · M bookmark · 1/2/3/0 verdict</div><details><summary>Inspect frame data</summary><pre id="details"></pre></details></div>
 <div class="stack"><section class="panel"><div class="panelhead"><h2>Person observations</h2><small>Visible evidence</small></div><div id="persons" class="body"></div></section><section class="panel"><div class="panelhead"><h2>Object interactions</h2><small id="relationMode"></small></div><div id="relations" class="body"></div></section></div></div>
 <section class="panel events"><div class="panelhead"><h2>Moments to review</h2><span class="pill warn">Review required</span></div><div id="events" class="body"></div></section><p class="foot">Mood, identity and intent are not inferred. This view is a recorded snapshot; it is not a live camera feed.</p></main></div>
 <footer style="padding:16px 24px;font-size:11px;color:#627269">Based on RelateAnything by Maëlic Neau · <a href="https://github.com/Maelic/RelateAnything">Upstream project</a><p id="sampleCredit" hidden>Sample photograph: “A horse rider in Maidan , Kolkata.jpg” by Subhrajyoti07 · <a href="https://commons.wikimedia.org/wiki/File:A_horse_rider_in_Maidan_,_Kolkata.jpg">Original source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Thumbnail and analytical overlays added for this review.</p></footer>
@@ -125,6 +133,7 @@ document.getElementById('vehicleForm').addEventListener('submit',async event=>{e
 for(const id of ['vehicleCountry','vehicleIdentifier'])document.getElementById(id).addEventListener('input',()=>{document.getElementById('vehicleConfirm').checked=false;document.getElementById('vehicleResult').hidden=true;document.getElementById('vehicleMessage').textContent='';});
 const el=id=>document.getElementById(id),canvas=el('scene'),ctx=canvas.getContext('2d');let rows=[],frames=[],renderToken=0,cleanupWorkspacePlayback=null;
 let workspaceZones=[],draftZone=null,drawMode=false,dragStart=null,lastFrameImg=null,activeEventIdx=0;
+let zoom=1,panX=0,panY=0,panning=false,panLast=null,brightness=100,contrast=100,redactMode=false,redactStart=null,redactions=[];
 const jobPath=location.pathname.match(/^\/jobs\/([a-f0-9]{32})\/review$/);
 const isHostedWorkspace=Boolean(jobPath&&location.protocol.startsWith('http'));
 function text(tag,value,cls){const n=document.createElement(tag);n.textContent=value;if(cls)n.className=cls;return n;}
@@ -161,15 +170,27 @@ function renderPlates(f){const host=el('plateCandidates');host.replaceChildren()
 function renderPeople(f){const host=el('persons');host.replaceChildren();const observations=f.person_analysis||[];el('peopleCount').textContent=f.regions.filter(r=>r.label==='person').length;if(!observations.length){empty(host, f.regions.some(r=>r.label==='person')?'Detailed person analysis was not enabled for this frame.':'No person observations in this frame.');return;}for(const p of observations){const card=text('article','','person');card.append(text('h3','Person · '+p.person_id));fact(card,'Upper-body color',p.appearance);fact(card,'Posture',p.posture);fact(card,'Movement',p.motion);if(p.interactions?.length){const list=text('div','','fact');list.append(text('b','Model-suggested interactions'));for(const r of p.interactions)list.append(text('p',r.predicate+' '+r.object_label+' · score '+number(r.model_score)));card.append(list);}host.append(card);}}
 function renderRelations(f){const host=el('relations');host.replaceChildren();if(f.relation_skip_reason==='scheduled_skip'){el('relationMode').textContent='Scheduled pause';empty(host,'Relationship analysis was not run on this frame. Detection and tracking continued; no earlier relationships are reused.');return;}const confirmed=f.confirmed_relations||[];const relations=confirmed.length?confirmed:(f.relations||[]);el('relationMode').textContent=confirmed.length?'Temporal support':'Single-frame candidates';const labels=new Map(f.regions.map(r=>[r.track_id||r.id,(r.label||'object')+' · '+(r.track_id||r.id)]));if(!relations.length)empty(host,'No supported relationships in this frame.');for(const r of relations.slice(0,12)){const edge=text('div','','edge');edge.append(text('strong',(labels.get(r.subject_id)||r.subject_id)+' → '+r.predicate+' → '+(labels.get(r.object_id)||r.object_id)));edge.append(text('span','Model score '+number(r.mean_score??r.score)+(r.support_count?' · '+r.support_count+' observations':''),'score'));host.append(edge);}}
 function renderEvents(){const host=el('events');host.replaceChildren();let count=0;frames.forEach((f,i)=>{for(const e of f.events||[]){count++;const card=text('article','','event');const jump=text('button',e.type.replaceAll('_',' ')+' · '+number(e.timestamp_seconds)+' s');jump.addEventListener('click',()=>{el('frame').value=i;draw();el('frame').focus();});card.append(jump,text('p','Object '+e.object_track_id+(e.subject_track_id?' · Person '+e.subject_track_id:'')+(e.zone_id?' · Zone '+e.zone_id+' · '+e.support_count+' observations':' · observed duration '+number(e.observed_duration_seconds??e.observed_unattended_seconds)+' s')));if(e.limitation)card.append(text('p',e.limitation));const evidence=(e.review_frame_indices||[]).map(index=>frames.findIndex(frame=>frame.frame_index===index)).filter(index=>index>=0);if(evidence.length){const label=text('label','Review evidence frame '),select=document.createElement('select');select.setAttribute('aria-label','Evidence frames for '+e.event_id);const placeholder=text('option','Choose a frame');placeholder.value='';select.append(placeholder);for(const index of evidence){const option=text('option',number(frames[index].timestamp_seconds)+' s · frame '+frames[index].frame_index);option.value=index;select.append(option);}select.addEventListener('change',()=>{if(select.value!==''){el('frame').value=select.value;draw();el('frame').focus();}});label.append(select);card.append(label);}host.append(card);}});el('eventCount').textContent=count;if(!count)empty(host,'No candidate events were emitted in this session. This does not establish that no event occurred.');}
-function stageTransform(f){const [w,h]=f.image_size;const scale=Math.min(canvas.width/w,canvas.height/h);return {w,h,scale,ox:(canvas.width-w*scale)/2,oy:(canvas.height-h*scale)/2};}
-function paint(f,img){ctx.fillStyle='#12221c';ctx.fillRect(0,0,canvas.width,canvas.height);const {w,h,scale,ox,oy}=stageTransform(f);if(img)ctx.drawImage(img,ox,oy,w*scale,h*scale);else{ctx.strokeStyle='#294035';ctx.lineWidth=1;for(let x=0;x<canvas.width;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}for(let y=0;y<canvas.height;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}}
+function stageTransform(f){const [w,h]=f.image_size;const baseScale=Math.min(canvas.width/w,canvas.height/h);const scale=baseScale*zoom;return {w,h,scale,ox:(canvas.width-w*scale)/2+panX,oy:(canvas.height-h*scale)/2+panY};}
+function paint(f,img){ctx.fillStyle='#12221c';ctx.fillRect(0,0,canvas.width,canvas.height);const {w,h,scale,ox,oy}=stageTransform(f);if(img){ctx.save();if('filter' in ctx)ctx.filter=`brightness(${brightness}%) contrast(${contrast}%)`;ctx.drawImage(img,ox,oy,w*scale,h*scale);ctx.restore();}else{ctx.strokeStyle='#294035';ctx.lineWidth=1;for(let x=0;x<canvas.width;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}for(let y=0;y<canvas.height;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}}
 const zonesById=new Map((f.zones||[]).map(z=>[z.id,z]));for(const z of workspaceZones)if(!zonesById.has(z.id))zonesById.set(z.id,{...z,unsaved:true});
 for(const zone of zonesById.values()){const [x,y,x2,y2]=zone.box;ctx.strokeStyle=zone.unsaved?'#8fc7ff':'#ffce7a';ctx.lineWidth=2;ctx.setLineDash([8,5]);ctx.strokeRect(ox+x*w*scale,oy+y*h*scale,(x2-x)*w*scale,(y2-y)*h*scale);ctx.setLineDash([]);ctx.fillStyle=zone.unsaved?'#8fc7ff':'#ffce7a';ctx.font='17px system-ui';ctx.fillText(zone.id,ox+x*w*scale+5,oy+y*h*scale+20);}
 if(draftZone){const [x,y,x2,y2]=draftZone;ctx.strokeStyle='#d8f28e';ctx.lineWidth=2.5;ctx.setLineDash([5,4]);ctx.strokeRect(ox+x*w*scale,oy+y*h*scale,(x2-x)*w*scale,(y2-y)*h*scale);ctx.setLineDash([]);}
+for(const mask of redactions){const [x,y,x2,y2]=mask;ctx.fillStyle='#090d0b';ctx.fillRect(ox+x*w*scale,oy+y*h*scale,(x2-x)*w*scale,(y2-y)*h*scale);ctx.strokeStyle='#ffbe55';ctx.lineWidth=1.5;ctx.strokeRect(ox+x*w*scale,oy+y*h*scale,(x2-x)*w*scale,(y2-y)*h*scale);}
 if(el('boxes').checked)for(const r of f.regions){const [x,y,x2,y2]=r.box;ctx.strokeStyle=r.label==='person'?'#d8f28e':'#6de1c8';ctx.lineWidth=2.5;ctx.strokeRect(ox+x*scale,oy+y*scale,(x2-x)*scale,(y2-y)*scale);const label=(r.label||'object')+' · '+(r.track_id||r.id);ctx.font='17px system-ui';const tx=ox+x*scale,ty=Math.max(22,oy+y*scale);ctx.fillStyle='#14271fe8';ctx.fillRect(tx,ty-23,ctx.measureText(label).width+14,23);ctx.fillStyle='#f0f5e7';ctx.fillText(label,tx+7,ty-6);}
 if(el('pose').checked)for(const p of f.person_analysis||[]){const pts=p.keypoints||[],scores=p.keypoint_scores||[];ctx.strokeStyle='#ffce7a';ctx.fillStyle='#ffce7a';ctx.lineWidth=3;for(const [a,b] of [[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]])if(scores[a]>=.5&&scores[b]>=.5){ctx.beginPath();ctx.moveTo(ox+pts[a][0]*scale,oy+pts[a][1]*scale);ctx.lineTo(ox+pts[b][0]*scale,oy+pts[b][1]*scale);ctx.stroke();}pts.forEach((v,i)=>{if(scores[i]>=.5){ctx.beginPath();ctx.arc(ox+v[0]*scale,oy+v[1]*scale,4,0,Math.PI*2);ctx.fill();}});}}
 function draw(){const token=++renderToken,f=frames[Number(el('frame').value)];el('previous').disabled=!f||Number(el('frame').value)===0;el('next').disabled=!f||Number(el('frame').value)>=frames.length-1;if(!f){lastFrameImg=null;ctx.clearRect(0,0,canvas.width,canvas.height);el('position').textContent='No processed frames';el('persons').replaceChildren();el('relations').replaceChildren();el('details').textContent='';el('peopleCount').textContent=0;return;}el('position').textContent=(f.frame_id||'Image')+' · '+(f.timestamp_seconds==null?'single image':number(f.timestamp_seconds)+' s');renderPeople(f);renderRelations(f);renderPlates(f);const {preview_data_url,...record}=f;el('details').textContent=JSON.stringify(record,null,2);lastFrameImg=null;paint(f,null);el('canvasCaption').textContent='BOX LAYOUT · NO IMAGE EMBEDDED';let imgSrc=null;if(typeof preview_data_url==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(preview_data_url)){imgSrc=preview_data_url;}else if(isHostedWorkspace&&typeof f.preview_path==='string'&&/^(frame-\d+|image-0)\.jpg$/.test(f.preview_path)){imgSrc='/jobs/'+jobPath[1]+'/frames/'+f.preview_path;}if(imgSrc){const img=new Image();img.onload=()=>{if(token===renderToken){lastFrameImg=img;paint(f,img);el('canvasCaption').textContent='SOURCE FRAME · DETECTION OVERLAY';}};img.src=imgSrc;}}
 el('frame').addEventListener('input',draw);el('boxes').addEventListener('change',draw);el('pose').addEventListener('change',draw);for(const [id,step] of [['previous',-1],['next',1]])el(id).addEventListener('click',()=>{el('frame').value=Number(el('frame').value)+step;draw();});
+const frameCoord=evt=>{const f=frames[Number(el('frame').value)];if(!f)return null;const rect=canvas.getBoundingClientRect();const cx=(evt.clientX-rect.left)*(canvas.width/rect.width);const cy=(evt.clientY-rect.top)*(canvas.height/rect.height);const {w,h,scale,ox,oy}=stageTransform(f);return [Math.max(0,Math.min(1,(cx-ox)/(w*scale))),Math.max(0,Math.min(1,(cy-oy)/(h*scale)))];};
+el('zoom').addEventListener('input',()=>{zoom=Number(el('zoom').value);if(zoom===1){panX=0;panY=0;}el('zoomVal').textContent=zoom.toFixed(1)+'×';const f=frames[Number(el('frame').value)];if(f)paint(f,lastFrameImg);});
+el('brightness').addEventListener('input',()=>{brightness=Number(el('brightness').value);const f=frames[Number(el('frame').value)];if(f)paint(f,lastFrameImg);});
+el('contrast').addEventListener('input',()=>{contrast=Number(el('contrast').value);const f=frames[Number(el('frame').value)];if(f)paint(f,lastFrameImg);});
+el('resetOptics').addEventListener('click',()=>{zoom=1;panX=0;panY=0;brightness=100;contrast=100;el('zoom').value='1';el('brightness').value='100';el('contrast').value='100';el('zoomVal').textContent='1.0×';const f=frames[Number(el('frame').value)];if(f)paint(f,lastFrameImg);});
+el('redactBtn').addEventListener('click',()=>{redactMode=!redactMode;if(redactMode)drawMode=false;canvas.classList.toggle('canvas-draw',redactMode);el('redactBtn').textContent=redactMode?'Cancel redaction':'Draw redaction mask';});
+el('clearRedact').addEventListener('click',()=>{redactions=[];const f=frames[Number(el('frame').value)];if(f)paint(f,lastFrameImg);});
+el('snapshotPng').addEventListener('click',()=>{const f=frames[Number(el('frame').value)];if(!f)return;const url=canvas.toDataURL('image/png');const a=document.createElement('a');a.href=url;a.download=`evidence-frame-${f.frame_index??0}.png`;a.click();});
+canvas.addEventListener('mousedown',evt=>{if(redactMode){redactStart=frameCoord(evt);return;}if(!drawMode&&zoom>1){panning=true;panLast=[evt.clientX,evt.clientY];}});
+canvas.addEventListener('mousemove',evt=>{if(redactMode&&redactStart){const cur=frameCoord(evt);if(!cur)return;const preview=[Math.min(redactStart[0],cur[0]),Math.min(redactStart[1],cur[1]),Math.max(redactStart[0],cur[0]),Math.max(redactStart[1],cur[1])];const saved=redactions.slice();redactions.push(preview);const f=frames[Number(el('frame').value)];if(f)paint(f,lastFrameImg);redactions=saved;return;}if(panning&&panLast){panX+=(evt.clientX-panLast[0])*1.2;panY+=(evt.clientY-panLast[1])*1.2;panLast=[evt.clientX,evt.clientY];const f=frames[Number(el('frame').value)];if(f)paint(f,lastFrameImg);}});
+canvas.addEventListener('mouseup',evt=>{if(redactMode&&redactStart){const cur=frameCoord(evt),start=redactStart;redactStart=null;redactMode=false;canvas.classList.remove('canvas-draw');el('redactBtn').textContent='Draw redaction mask';if(cur){const box=[Math.min(start[0],cur[0]),Math.min(start[1],cur[1]),Math.max(start[0],cur[0]),Math.max(start[1],cur[1])];if(box[2]-box[0]>0.005&&box[3]-box[1]>0.005)redactions.push(box);}const f=frames[Number(el('frame').value)];if(f)paint(f,lastFrameImg);}if(panning){panning=false;panLast=null;}});
 el('open').addEventListener('change',async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>100*1024*1024)throw Error('Select a result smaller than 100 MB.');const raw=await file.text();let data;try{data=JSON.parse(raw);}catch{data=raw.split(/\r?\n/).filter(s=>s.trim()).map(s=>JSON.parse(s));}load(data);credits();if(cleanupWorkspacePlayback)cleanupWorkspacePlayback();el('error').classList.add('hidden');}catch(error){el('error').textContent=error.message;el('error').classList.remove('hidden');}});
 function annotationDraft(records){
   if(!Array.isArray(records)||records[0]?.relation_endpoint_kind!=='track_id')throw Error('Annotation drafts require a tracked video session.');
@@ -248,12 +269,30 @@ renderEvents=function(){
   });
   host.prepend(summary,saveStatus);updateSummary();
 };
-try{load(JSON.parse(el('data').textContent));}catch(error){el('error').textContent=error.message;el('error').classList.remove('hidden');}
+try{load(JSON.parse(el('data').textContent));const hashMatch=location.hash.match(/frame=(\d+)/);if(hashMatch){const targetIdx=frames.findIndex(f=>f.frame_index===Number(hashMatch[1]));if(targetIdx>=0){el('frame').value=String(targetIdx);draw();}}}catch(error){el('error').textContent=error.message;el('error').classList.remove('hidden');}
 function credits(){el('sampleCredit').hidden=!frames.some(f=>f.image_sha256==='549bd965a4ac9aa682f70e40757c5841d160c4e84eb86c2948d5bac5dedecf29');}credits();
 
 // Original media and interactive studios belong only to this saved job, never to a newly opened result file.
 if (isHostedWorkspace) {
   el('workspaceBack').hidden = false;
+  fetch('/api/jobs/' + jobPath[1]).then(r => r.ok ? r.json() : null).then(job => {
+    const banner = el('custodyBanner');
+    if (!job || !banner) return;
+    const parts = [];
+    if (job.camera_label) parts.push(['CAMERA', job.camera_label]);
+    if (job.source_sha256) parts.push(['INGEST SHA-256', job.source_sha256]);
+    if (job.case_id) parts.push(['CASE ID', job.case_id]);
+    if (job.recorded_start_iso) parts.push(['START UTC', `${job.recorded_start_iso} (${(job.clock_offset_seconds || 0) >= 0 ? '+' : ''}${job.clock_offset_seconds || 0}s)`]);
+    if (parts.length) {
+      banner.replaceChildren();
+      for (const [lbl, val] of parts) {
+        const span = document.createElement('span');
+        span.append(text('strong', lbl + ': '), document.createTextNode(val));
+        banner.append(span);
+      }
+      banner.classList.remove('hidden');
+    }
+  }).catch(() => {});
   let videoEl = null;
   if (rows.find(r=>r.type==='session')?.source_kind !== 'image') {
     const playback = text('section', '', 'panel playback');
@@ -268,9 +307,21 @@ if (isHostedWorkspace) {
     const body = text('div', '', 'body');
     const jump = text('button', 'Jump to selected evidence frame ↗');
     jump.type = 'button'; jump.disabled = true;
-    video.addEventListener('loadedmetadata', () => {jump.disabled = false;});
+    const stepBack = text('button', '−1f'); stepBack.type = 'button'; stepBack.disabled = true;
+    const stepFwd = text('button', '+1f'); stepFwd.type = 'button'; stepFwd.disabled = true;
+    const speedSel = document.createElement('select');
+    speedSel.setAttribute('aria-label', 'Playback speed');
+    for (const [val, lbl] of [['0.25', '0.25×'], ['0.5', '0.5×'], ['1', '1×'], ['2', '2×']]) {
+      const opt = text('option', lbl); opt.value = val;
+      if (val === '1') opt.selected = true;
+      speedSel.append(opt);
+    }
+    speedSel.onchange = () => {video.playbackRate = Number(speedSel.value);};
+    stepBack.onclick = () => {video.pause(); video.currentTime = Math.max(0, video.currentTime - 1 / 30);};
+    stepFwd.onclick = () => {video.pause(); video.currentTime = video.currentTime + 1 / 30;};
+    video.addEventListener('loadedmetadata', () => {jump.disabled = false; stepBack.disabled = false; stepFwd.disabled = false;});
     const help = text('p', 'Use the timeline or a candidate moment above, then jump here to inspect the original footage. Findings describe sampled frames, not every moment in playback.');
-    video.addEventListener('error', () => {jump.disabled = true; help.textContent = 'This recording is unavailable or its codec cannot play in your browser. You can still review the sampled evidence above.';});
+    video.addEventListener('error', () => {jump.disabled = true; stepBack.disabled = true; stepFwd.disabled = true; help.textContent = 'This recording is unavailable or its codec cannot play in your browser. You can still review the sampled evidence above.';});
     jump.onclick = () => {
       const timestamp = frames[Number(el('frame').value)]?.timestamp_seconds;
       if (Number.isFinite(timestamp) && timestamp >= 0) {
@@ -279,7 +330,9 @@ if (isHostedWorkspace) {
         video.focus();
       }
     };
-    body.append(jump, help); playback.append(heading, video, body);
+    const playRow = text('div', '', 'rowbtns');
+    playRow.append(jump, stepBack, stepFwd, speedSel);
+    body.append(playRow, help); playback.append(heading, video, body);
     document.querySelector('main').append(playback);
     cleanupWorkspacePlayback = () => {video.pause(); video.removeAttribute('src'); video.load(); playback.remove(); videoEl = null; cleanupWorkspacePlayback = null;};
   }
@@ -550,6 +603,85 @@ if (isHostedWorkspace) {
     };
   }
 
+  // Investigator Evidence Pinboard (Bookmarks saved to case/workspace)
+  const pinDetails = document.createElement('details');
+  pinDetails.className = 'panel studio';
+  pinDetails.id = 'pinboardStudio';
+  pinDetails.open = true;
+  pinDetails.append(text('summary', 'Evidence pinboard (bookmark key frames with investigator notes)'));
+  const pinBody = text('div', '', 'body');
+  const pinForm = document.createElement('form');
+  pinForm.className = 'pin-form';
+  const pinTag = document.createElement('select');
+  for (const t of ['observation', 'arrival', 'handoff', 'vehicle', 'departure', 'suspect_lead']) pinTag.append(text('option', t));
+  const pinCaption = document.createElement('input');
+  pinCaption.id = 'pinCaption';
+  pinCaption.placeholder = 'Investigator observation for the selected frame (shortcut: M)';
+  pinCaption.maxLength = 500;
+  pinCaption.required = true;
+  const pinBtn = text('button', '+ Pin frame', 'btn-primary');
+  pinBtn.type = 'submit';
+  pinForm.append(pinTag, pinCaption, pinBtn);
+  const pinMsg = text('p', '', 'foot');
+  const pinList = text('div', '');
+  pinBody.append(pinForm, pinMsg, pinList);
+  pinDetails.append(pinBody);
+  mainEl.append(pinDetails);
+
+  const loadPins = async () => {
+    try {
+      const res = await fetch('/api/jobs/' + jobPath[1] + '/bookmarks');
+      if (!res.ok) return;
+      const data = await res.json();
+      pinList.replaceChildren();
+      if (!(data.bookmarks || []).length) {
+        pinList.append(text('p', 'No pinned bookmarks for this clip yet.', 'foot'));
+        return;
+      }
+      for (const bm of data.bookmarks) {
+        const row = text('div', '', 'gt-item');
+        const jump = text('button', `${bm.tag.toUpperCase()} · frame #${bm.frame_index} (${bm.wall_clock || number(bm.timestamp_seconds) + ' s'}) — ${bm.caption}`);
+        jump.type = 'button';
+        jump.onclick = () => {
+          const idx = frames.findIndex(f => f.frame_index === bm.frame_index);
+          if (idx >= 0) {el('frame').value = String(idx); draw();}
+        };
+        const del = text('button', 'Remove'); del.type = 'button';
+        del.onclick = async () => {
+          await fetch('/api/bookmarks/' + bm.id, {method: 'DELETE'});
+          loadPins();
+        };
+        row.append(jump, del);
+        pinList.append(row);
+      }
+    } catch {}
+  };
+  loadPins();
+  pinForm.onsubmit = async evt => {
+    evt.preventDefault();
+    const f = frames[Number(el('frame').value)];
+    if (!f) {pinMsg.textContent = 'Select a frame first.'; return;}
+    try {
+      const res = await fetch('/api/jobs/' + jobPath[1] + '/bookmarks', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          frame_index: f.frame_index ?? 0,
+          timestamp_seconds: Number(f.timestamp_seconds ?? 0),
+          tag: pinTag.value,
+          caption: pinCaption.value.trim(),
+        }),
+      });
+      const out = await res.json();
+      if (!res.ok) throw Error(out.error || 'Could not pin bookmark');
+      pinCaption.value = '';
+      pinMsg.textContent = 'Pinned frame #' + (f.frame_index ?? 0) + ' to evidence storyboard.';
+      loadPins();
+    } catch (err) {
+      pinMsg.textContent = err.message;
+    }
+  };
+
   // Keyboard shortcuts for fast frame stepping & event verdicts
   document.addEventListener('keydown', evt => {
     if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
@@ -564,6 +696,10 @@ if (isHostedWorkspace) {
       el('boxes').checked = !el('boxes').checked; draw();
     } else if ((evt.key === 'p' || evt.key === 'P') && !['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) {
       el('pose').checked = !el('pose').checked; draw();
+    } else if ((evt.key === 'm' || evt.key === 'M') && !['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) {
+      evt.preventDefault();
+      pinDetails.open = true;
+      pinCaption.focus();
     } else if (['1', '2', '3', '0'].includes(evt.key) && !['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) {
       const map = {'1': 'correct', '2': 'incorrect', '3': 'uncertain', '0': ''};
       const select = document.querySelector(`select[data-verdict-select="${activeEventIdx}"]`) || document.querySelector('select[data-verdict-select]');

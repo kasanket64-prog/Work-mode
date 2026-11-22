@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Fieldnote turns images and recordings into observations you can explore. See the moment. Understand the connection. Review the evidence.">
+  <meta name="description" content="Fieldnote turns images and recordings into observations you can explore. Case management, SHA-256 chain of custody, cross-clip search, and verifiable evidence.">
   <meta name="theme-color" content="#0a0f0d">
   <title>Fieldnote — A clearer picture.</title>
   <link rel="stylesheet" href="/assets/workspace.css">
@@ -21,16 +21,18 @@
 
       <nav class="app-nav" aria-label="Workspace pages">
         <a href="#overview" data-nav="overview" class="is-active" aria-current="page">Overview</a>
-        <a href="#demo" data-nav="demo">Interactive Demo</a>
-        <a href="#analyze" data-nav="analyze">Analyze Studio</a>
+        <a href="#cases" data-nav="cases">Cases <span id="nav-case-count" class="nav-badge">0</span></a>
+        <a href="#search" data-nav="search">Lead Search</a>
+        <a href="#analyze" data-nav="analyze">Analyze</a>
         <a href="#history" data-nav="history">Workspace <span id="nav-job-count" class="nav-badge">0</span></a>
-        <a href="#questions" data-nav="questions">Docs &amp; FAQ</a>
+        <a href="#demo" data-nav="demo">Demo</a>
+        <a href="#questions" data-nav="questions">Docs</a>
       </nav>
 
       <div class="header-actions">
         <span id="nav-live-dot" class="nav-live" title="Local workspace status"><i aria-hidden="true"></i><span>Local</span></span>
         <button id="theme-toggle" class="icon-btn" type="button" aria-pressed="false" title="Switch color theme">☀ Light</button>
-        <a class="button small dark" href="#analyze" data-go="analyze">+ New Analysis</a>
+        <a class="button small dark" href="#analyze" data-go="analyze">+ New Intake</a>
       </div>
     </div>
   </header>
@@ -40,17 +42,18 @@
     <section id="overview" class="page-view is-active wrap" data-page="overview" aria-labelledby="hero-title">
       <div class="hero">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> VISUAL INTELLIGENCE WORKSPACE · LOCAL-FIRST</p>
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> FORENSIC &amp; VISUAL INTELLIGENCE WORKSPACE</p>
           <h1 id="hero-title">More than watching.<br><span>See the connections.</span></h1>
-          <p class="intro">Upload footage, track people and vehicles across frames, draw camera zones, replay behavioral rules in seconds, and benchmark event predictions on your own machine.</p>
+          <p class="intro">Organize CCTV clips by Case ID with ingest SHA-256 hashing, search appearances and plates across cameras, calibrate DVR clocks, link recurring subjects, and export printable evidence dossiers.</p>
           <div class="actions">
-            <a class="button dark" href="#analyze" data-go="analyze">Open Analyze Studio <span aria-hidden="true">↗</span></a>
-            <a class="button-ghost" href="#demo" data-go="demo"><span class="play-icon" aria-hidden="true">▷</span> Launch Demo Explorer</a>
+            <a class="button dark" href="#cases" data-go="cases">Open Case Desk <span aria-hidden="true">↗</span></a>
+            <a class="button-ghost" href="#analyze" data-go="analyze">+ Ingest Footage</a>
+            <a class="button-ghost" href="#demo" data-go="demo"><span class="play-icon" aria-hidden="true">▷</span> Saved Demo</a>
           </div>
           <div class="hero-promises">
-            <span>✓ 100% local SQLite &amp; file storage</span>
-            <span>✓ Warm-worker weight caching</span>
-            <span>✓ Keyboard-driven review studio</span>
+            <span>✓ Ingest SHA-256 &amp; tamper-evident audit log</span>
+            <span>✓ Forensic zoom, loupe contrast &amp; redaction</span>
+            <span>✓ Human-verified evidence vs. AI leads separated</span>
           </div>
         </div>
 
@@ -73,42 +76,42 @@
             <div>
               <small>SAVED SCENE GRAPH · IMAGE 001</small>
               <strong>Person <em>riding</em> horse</strong>
-              <span>Click to inspect bounding boxes &amp; relational graph</span>
+              <span>Click to open interactive bounding boxes &amp; edge score</span>
             </div>
           </div>
         </a>
       </div>
 
-      <div class="quick-grid" aria-label="Platform sections">
-        <a class="quick-tile" href="#demo" data-go="demo">
-          <span class="quick-label">SCENE EXPLORER</span>
-          <strong>Saved Model Demo</strong>
-          <small>Inspect real CPU RelateAnything boxes &amp; scores →</small>
+      <div class="quick-grid" aria-label="Investigation modules">
+        <a class="quick-tile" href="#cases" data-go="cases">
+          <span class="quick-label">CASE MANAGEMENT</span>
+          <strong>Cases &amp; Custody</strong>
+          <small>Group clips, verify SHA-256, export dossiers →</small>
+        </a>
+        <a class="quick-tile" href="#search" data-go="search">
+          <span class="quick-label">CROSS-CLIP DISCOVERY</span>
+          <strong>Lead Search</strong>
+          <small>Filter across cameras by plate, color, class or alert →</small>
         </a>
         <a class="quick-tile" href="#analyze" data-go="analyze">
-          <span class="quick-label">PIPELINE STUDIO</span>
-          <strong>Analyze Footage</strong>
-          <small>MP4, MOV, AVI, WebM, JPG or PNG up to 512 MB →</small>
-        </a>
-        <a class="quick-tile" href="#history" data-go="history">
-          <span class="quick-label">LIVE OPERATIONS</span>
-          <strong>Workspace &amp; Jobs</strong>
-          <small>Real-time SSE progress, evaluation &amp; logs →</small>
+          <span class="quick-label">FORENSIC INTAKE</span>
+          <strong>Analyze Studio</strong>
+          <small>Tag Case ID, camera source &amp; DVR clock offset →</small>
         </a>
         <a class="quick-tile" href="#history" data-go="history">
           <span class="quick-label">RUNTIME STATUS</span>
           <strong id="overview-runtime">Checking runtime…</strong>
-          <small>Inspect installed extras &amp; disk storage →</small>
+          <small>View active jobs &amp; installed extras →</small>
         </a>
       </div>
 
       <div id="features" class="bento-section">
         <div class="section-top">
           <div>
-            <p class="eyebrow">PLATFORM CAPABILITIES</p>
-            <h2>Built as a complete inspection workflow.</h2>
+            <p class="eyebrow">INVESTIGATIVE WORKFLOW</p>
+            <h2>Designed for structured video evidence review.</h2>
           </div>
-          <a class="text-link" href="#questions" data-go="questions">CLI &amp; Docker guide ↗</a>
+          <a class="text-link" href="#questions" data-go="questions">CLI, Docker &amp; integrity notes ↗</a>
         </div>
 
         <div class="feature-grid">
@@ -121,36 +124,200 @@
               <span class="object-chip">backpack</span>
               <span class="connection-label">holding ↗</span>
             </div>
-            <span class="eyebrow">01 / SCENE GRAPHS</span>
-            <h3>Connect objects with track IDs</h3>
-            <p>YOLO detection paired with IoU or Kalman tracking and RelateAnything predicates across sampled frames.</p>
-            <a href="#demo" data-go="demo">Open Interactive Demo →</a>
+            <span class="eyebrow">01 / SCENE &amp; TRACKS</span>
+            <h3>Cross-camera entity linking</h3>
+            <p>Review YOLO + Kalman/IoU tracks, link recurring track IDs under neutral working dossiers, and search appearance cues across clips.</p>
+            <a href="#search" data-go="search">Open Lead Search →</a>
           </article>
 
           <article class="feature-card">
             <div class="feature-art timeline-art" aria-hidden="true">
               <span>00:00</span><i></i><b>Review moment</b><i></i><span>00:30</span>
             </div>
-            <span class="eyebrow">02 / ZONES &amp; REPLAY</span>
-            <h3>Draw zones &amp; replay fast</h3>
-            <p>Sketch camera zones directly on evidence frames inside Review and replay temporal rules without re-running models.</p>
-            <a href="#analyze" data-go="analyze">Open Analyze Studio →</a>
+            <span class="eyebrow">02 / FORENSIC REVIEW</span>
+            <h3>Zoom, contrast &amp; redaction</h3>
+            <p>Inside Review: 4× zoom &amp; pan, brightness/contrast enhancement, −1f/+1f video step, bystander redaction masks, and PNG snapshots.</p>
+            <a href="#history" data-go="history">Inspect Recordings →</a>
           </article>
 
           <article class="feature-card">
             <div class="feature-art review-art" aria-hidden="true">
-              <span>Observation verdict</span><b>✓ Correct</b><span>Uncertain</span>
+              <span>Custody dossier</span><b>✓ Verified</b><span>Audit SHA-256</span>
             </div>
-            <span class="eyebrow">03 / EVALUATION</span>
-            <h3>Verdicts &amp; precision/recall</h3>
-            <p>Confirm or reject alerts using keyboard shortcuts, annotate ground truth, and track F1 scores per job.</p>
-            <a href="#history" data-go="history">Open Workspace →</a>
+            <span class="eyebrow">03 / CHAIN OF CUSTODY</span>
+            <h3>Hash-chained audit &amp; PDF export</h3>
+            <p>Every upload hashes bytes on intake; every mutation appends to a SHA-256 linked audit chain exported directly into printable case reports.</p>
+            <a href="#cases" data-go="cases">Open Case Desk →</a>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- PAGE 2: INTERACTIVE DEMO EXPLORER -->
+    <!-- PAGE 2: CASES & CHAIN OF CUSTODY -->
+    <section id="cases" class="page-view wrap" data-page="cases" aria-labelledby="cases-heading">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> CASE MANAGEMENT &amp; CHAIN OF CUSTODY</p>
+          <h2 id="cases-heading">Investigation Case Desk</h2>
+          <p class="muted">Group multi-camera evidence under formal case IDs, calibrate DVR clock offsets, link subjects across clips, verify audit hashes, and print case dossiers.</p>
+        </div>
+        <div class="page-actions">
+          <span id="audit-badge" class="audit-pill">Checking audit chain…</span>
+          <a class="button small dark" href="#analyze" data-go="analyze">+ Ingest Clip to Case</a>
+        </div>
+      </div>
+
+      <div class="cases-layout">
+        <div class="cases-sidebar">
+          <form id="case-create-form" class="panel-card">
+            <h3>Create Investigation Case</h3>
+            <div class="stack-fields">
+              <label>Case Number
+                <input id="new-case-number" type="text" maxlength="60" placeholder="e.g. CASE-2026-014" required>
+              </label>
+              <label>Case Title
+                <input id="new-case-title" type="text" maxlength="140" placeholder="e.g. North Loading Dock Footage" required>
+              </label>
+              <label>Lead Investigator
+                <input id="new-case-investigator" type="text" maxlength="100" placeholder="e.g. Det. R. Verma">
+              </label>
+              <label>Case Notes
+                <input id="new-case-notes" type="text" maxlength="2000" placeholder="Scope, camera locations, warrant ref…">
+              </label>
+            </div>
+            <button class="button dark submit-full" type="submit" style="margin-top:14px">+ Open New Case</button>
+            <p id="case-form-msg" role="status" aria-live="polite"></p>
+          </form>
+
+          <div class="panel-card">
+            <h3>Active Case Files</h3>
+            <div id="cases-list" class="cases-list">
+              <p class="muted">Loading cases…</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="cases-detail">
+          <div id="case-empty" class="panel-card empty-box">
+            <h3>Select or create a case</h3>
+            <p class="muted">Choose a case file on the left to inspect its SHA-256 media inventory, pinned evidence bookmarks, linked entity dossier, and printable report.</p>
+          </div>
+
+          <div id="case-detail-panel" class="stack-panels" hidden>
+            <div class="panel-card">
+              <div class="detail-header">
+                <div>
+                  <span id="detail-case-num" class="eyebrow">CASE</span>
+                  <h3 id="detail-case-title">Case Title</h3>
+                  <p id="detail-case-investigator" class="muted"></p>
+                </div>
+                <div class="page-actions">
+                  <select id="detail-case-status" aria-label="Case status">
+                    <option value="open">Open</option>
+                    <option value="under_review">Under Review</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                  <a id="case-report-link" class="button small dark" href="#" target="_blank" rel="noopener">Print / Export Report ↗</a>
+                  <button id="case-delete-btn" class="danger-btn icon-btn" type="button">Delete Case</button>
+                </div>
+              </div>
+              <p id="detail-case-notes" class="muted" style="margin-top:10px"></p>
+            </div>
+
+            <div class="panel-card">
+              <h3>1 · Assigned Media &amp; DVR Clock Calibration</h3>
+              <p class="muted">Verify raw file SHA-256 hashes captured at upload and align each camera’s local DVR clock skew.</p>
+              <div id="case-media-list" class="dossier-list"></div>
+            </div>
+
+            <div class="panel-card">
+              <h3>2 · Evidence Storyboard (Pinned Bookmarks)</h3>
+              <p class="muted">Key moments bookmarked inside Forensic Review, ordered by calibrated wall-clock timeline.</p>
+              <div id="case-bookmarks-list" class="dossier-list"></div>
+            </div>
+
+            <div class="panel-card">
+              <h3>3 · Human-Linked Entity Dossier</h3>
+              <p class="muted">Manually associate recurring track IDs across separate cameras under a neutral working label.</p>
+              <form id="entity-form" class="entity-form">
+                <input id="entity-label" type="text" maxlength="100" placeholder="Working label (e.g. Subject A · dark hoodie)" required>
+                <select id="entity-kind" aria-label="Entity kind">
+                  <option value="person">Person</option>
+                  <option value="vehicle">Vehicle</option>
+                  <option value="object">Object</option>
+                </select>
+                <input id="entity-tracks" type="text" placeholder="Track links: jobPrefix:track-1, jobPrefix:track-4" required>
+                <input id="entity-desc" type="text" maxlength="1000" placeholder="Notes / distinguishing traits (optional)">
+                <button class="button small dark" type="submit">+ Link Entity</button>
+              </form>
+              <p id="entity-msg" class="muted" role="status"></p>
+              <div id="case-entities-list" class="dossier-list"></div>
+            </div>
+
+            <div class="panel-card">
+              <div class="detail-header">
+                <div>
+                  <h3>4 · Tamper-Evident Chain-of-Custody Log</h3>
+                  <p id="audit-verify-text" class="muted">Verifying cryptographic hash chain…</p>
+                </div>
+              </div>
+              <div id="audit-log-list" class="audit-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: CROSS-CLIP LEAD SEARCH -->
+    <section id="search" class="page-view wrap" data-page="search" aria-labelledby="search-heading">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> CROSS-CLIP LEAD DISCOVERY</p>
+          <h2 id="search-heading">Search Evidence Across Cameras</h2>
+          <p class="muted">Query completed analyses by keyword, license plate substring, upper-body color cue, object class, or event candidate.</p>
+        </div>
+        <a class="button small dark" href="#cases" data-go="cases">View Case Desk ↗</a>
+      </div>
+
+      <form id="lead-search-form" class="panel-card search-panel">
+        <div class="search-grid-inputs">
+          <label>Keyword / Track / Predicate
+            <input id="search-q" type="search" placeholder="e.g. backpack, holding, dock">
+          </label>
+          <label>Case Filter
+            <select id="search-case">
+              <option value="">All Cases &amp; Unassigned Clips</option>
+            </select>
+          </label>
+          <label>Object Class
+            <input id="search-label" type="text" placeholder="e.g. person, car, backpack">
+          </label>
+          <label>Upper-Body Color Cue
+            <input id="search-color" type="text" placeholder="e.g. dark, red, blue">
+          </label>
+          <label>Plate Substring
+            <input id="search-plate" type="text" placeholder="e.g. 74K">
+          </label>
+          <label>Alert Type
+            <input id="search-event" type="text" placeholder="e.g. unattended_bag, zone_entry">
+          </label>
+        </div>
+        <div class="page-actions" style="margin-top:14px">
+          <button class="button dark" type="submit">Search All Footage ↗</button>
+          <button id="search-reset" class="button-ghost" type="button">Reset Filters</button>
+          <span id="search-summary" class="muted" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+
+      <div id="search-results" class="search-results-grid" style="margin-top:18px">
+        <div class="empty-state">
+          <strong>Enter search filters above</strong>
+          <span>Find matching frames across all completed workspace clips and jump straight to the exact evidence frame.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 4: INTERACTIVE DEMO EXPLORER -->
     <section id="demo" class="page-view wrap" data-page="demo" aria-labelledby="demo-heading">
       <div class="page-head">
         <div>
@@ -160,7 +327,7 @@
         </div>
         <div class="page-actions">
           <a class="button-ghost" href="/assets/demo-result.json" download="fieldnote-example.json">Download Result JSON ↗</a>
-          <a class="button small dark" href="#analyze" data-go="analyze">Try Your Footage ↗</a>
+          <a class="button small dark" href="#analyze" data-go="analyze">Analyze Your Footage ↗</a>
         </div>
       </div>
 
@@ -221,18 +388,18 @@
       <p class="credit">Photograph: Subhrajyoti07 · <a href="https://commons.wikimedia.org/wiki/File:A_horse_rider_in_Maidan_,_Kolkata.jpg">Maidan, Kolkata</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p>
     </section>
 
-    <!-- PAGE 3: ANALYZE STUDIO -->
+    <!-- PAGE 5: ANALYZE STUDIO -->
     <section id="analyze" class="page-view wrap" data-page="analyze" aria-labelledby="upload-heading">
       <div class="page-head">
         <div>
-          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> ANALYZE STUDIO</p>
-          <h2 id="upload-heading">Configure &amp; run local footage analysis.</h2>
-          <p class="muted">Select a video or frame on the left, tune your inference pipeline on the right, and track live execution in your Workspace.</p>
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> FORENSIC INTAKE &amp; PIPELINE STUDIO</p>
+          <h2 id="upload-heading">Ingest footage with custody metadata.</h2>
+          <p class="muted">Media bytes are SHA-256 hashed during upload, stored locally, and optionally linked to an active Case and DVR clock baseline.</p>
         </div>
         <div class="upload-steps" aria-label="Upload workflow">
           <span id="step-1" class="selected">1 · Select media</span>
-          <span id="step-2">2 · Configure pipeline</span>
-          <span id="step-3">3 · Review studio</span>
+          <span id="step-2">2 · Custody &amp; pipeline</span>
+          <span id="step-3">3 · Forensic review</span>
         </div>
       </div>
 
@@ -244,7 +411,7 @@
             <strong id="file-title">Drop your video or image here</strong>
             <span id="file-caption">or browse files on your computer</span>
             <input id="file" type="file" accept=".mp4,.avi,.mov,.mkv,.webm,.jpg,.jpeg,.png" required aria-label="Choose a video or image">
-            <small>MP4, MOV, AVI, MKV, WebM, JPG or PNG · up to 512 MB</small>
+            <small>MP4, MOV, AVI, MKV, WebM, JPG or PNG · up to 512 MB · SHA-256 hashed on ingest</small>
           </label>
 
           <div id="file-preview" class="file-preview" hidden>
@@ -269,15 +436,29 @@
           <div class="privacy-note">
             <span aria-hidden="true">⌂</span>
             <div>
-              <strong>Processed locally on this computer</strong>
-              <p>Uploads stay in <code>outputs/workspace/</code> and metadata persists in SQLite until you delete them. Strict magic-byte validation protects every upload.</p>
+              <strong>Chain-of-custody safe local storage</strong>
+              <p>Uploads stay in <code>outputs/workspace/</code> and emit a <code>media_ingested</code> entry into the SHA-256 hash-chained audit log.</p>
             </div>
           </div>
         </div>
 
         <div class="panel-card workbench-config">
-          <h3>2 · Pipeline Configuration</h3>
+          <h3>2 · Custody &amp; Pipeline Configuration</h3>
           <div class="settings-fields">
+            <label>Assign to Case (optional)
+              <select id="case-select">
+                <option value="">Unassigned standalone clip</option>
+              </select>
+            </label>
+            <label>Camera / Source Label
+              <input id="camera-label" type="text" maxlength="100" placeholder="e.g. Cam 02 · Alley North">
+            </label>
+            <label>Clip Recorded Start (UTC ISO, optional)
+              <input id="recorded-start" type="text" maxlength="40" placeholder="e.g. 2026-11-22T14:30:00Z">
+            </label>
+            <label>DVR Clock Offset (seconds)
+              <input id="clock-offset" type="number" step="0.1" min="-86400" max="86400" value="0">
+            </label>
             <label>Look for
               <select id="mode">
                 <option value="scene">People, objects &amp; relationships</option>
@@ -315,27 +496,27 @@
             <input id="vehicle-crops" type="checkbox"> High-resolution vehicle crops (requires detection extra)
           </label>
 
-          <p class="config-note">Auto-safe stride tunes frame spacing automatically for low-FPS clips. After processing completes, you can adjust zones and replay reasoning inside Review without re-running detection or VLM inference.</p>
+          <p class="config-note">Auto-safe stride tunes frame spacing for low-FPS clips. After processing finishes, you can zoom frames, draw bystander redactions, bookmark leads, draw zones, and replay reasoning inside Forensic Review.</p>
 
-          <button id="start" class="button dark submit-full" type="submit">Analyze footage <span aria-hidden="true">↗</span></button>
-          <p class="upload-hint">Candidate alerts always require human inspection in Review.</p>
+          <button id="start" class="button dark submit-full" type="submit">Ingest &amp; Analyze Footage <span aria-hidden="true">↗</span></button>
+          <p class="upload-hint">Candidate alerts always require human verification in Review.</p>
           <progress id="progress" max="100" value="0" aria-label="Upload progress" hidden></progress>
           <p id="message" role="status" aria-live="polite"></p>
         </div>
       </form>
     </section>
 
-    <!-- PAGE 4: WORKSPACE OPERATIONS DASHBOARD -->
+    <!-- PAGE 6: WORKSPACE OPERATIONS DASHBOARD -->
     <section id="history" class="page-view wrap" data-page="history" aria-labelledby="history-heading">
       <div class="page-head">
         <div>
           <p class="eyebrow"><span class="dot" aria-hidden="true"></span> OPERATIONS WORKSPACE</p>
           <h2 id="history-heading">Your workspace.</h2>
-          <p class="muted">Real-time job telemetry over SSE, SQLite persistence, processing logs, and evaluation runs.</p>
+          <p class="muted">Real-time job telemetry over SSE, SQLite persistence, SHA-256 media custody chips, case assignment, and processing logs.</p>
         </div>
         <div class="page-actions">
           <span id="connection" class="connection" role="status">Connecting…</span>
-          <a class="button small dark" href="#analyze" data-go="analyze">+ New Analysis</a>
+          <a class="button small dark" href="#analyze" data-go="analyze">+ New Intake</a>
         </div>
       </div>
 
@@ -351,7 +532,7 @@
 
       <div class="workspace-toolbar">
         <label class="search-label">Find an analysis
-          <input id="job-search" type="search" placeholder="Search by type, date or analysis ID" autocomplete="off">
+          <input id="job-search" type="search" placeholder="Search by type, camera label, date or analysis ID" autocomplete="off">
         </label>
         <label>Status filter
           <select id="job-filter">
@@ -375,15 +556,15 @@
       <div id="jobs"><p class="empty-state">Connecting to your local workspace…</p></div>
     </section>
 
-    <!-- PAGE 5: DOCS & FAQ -->
+    <!-- PAGE 7: DOCS & FAQ -->
     <section id="questions" class="page-view wrap" data-page="questions" aria-labelledby="faq-title">
       <div class="page-head">
         <div>
           <p class="eyebrow"><span class="dot" aria-hidden="true"></span> DOCUMENTATION &amp; REFERENCE</p>
-          <h2 id="faq-title">CLI tools, containers &amp; clear answers.</h2>
-          <p class="muted">Launch live RTSP streams, run Kalman tracking or calibration benchmarks, and understand honest system limits.</p>
+          <h2 id="faq-title">CLI tools, forensic integrity &amp; FAQ.</h2>
+          <p class="muted">Launch live RTSP streams, run Kalman tracking or calibration benchmarks, and understand system boundaries.</p>
         </div>
-        <a class="button small dark" href="#analyze" data-go="analyze">Open Analyze Studio ↗</a>
+        <a class="button small dark" href="#cases" data-go="cases">Open Case Desk ↗</a>
       </div>
 
       <div class="docs-layout">
@@ -398,8 +579,8 @@
             </div>
 
             <div class="cmd-card">
-              <div class="cmd-head"><span>Kalman Video Pipeline</span><button type="button" data-copy=".venv\Scripts\camera-video.exe --video clip.mp4 --tracker kalman --stride 5 --output outputs\clip.jsonl">Copy</button></div>
-              <code>.venv\Scripts\camera-video.exe --video clip.mp4 --tracker kalman --stride 5 --output outputs\clip.jsonl</code>
+              <div class="cmd-head"><span>Kalman + Live RTSP Stream CLI</span><button type="button" data-copy=".venv\Scripts\camera-video.exe --stream rtsp://cam.local/live --stream-credentials-env CAM_CREDS --live-buffer --reconnect-attempts 3 --tracker kalman --output outputs\stream.jsonl">Copy</button></div>
+              <code>.venv\Scripts\camera-video.exe --stream rtsp://cam.local/live --stream-credentials-env CAM_CREDS --live-buffer --reconnect-attempts 3 --tracker kalman --output outputs\stream.jsonl</code>
             </div>
 
             <div class="cmd-card">
@@ -417,28 +598,24 @@
         <div class="panel-card faq-list">
           <h3>Frequently Asked Questions</h3>
           <details open>
-            <summary>Do I need to connect a camera?</summary>
-            <p>No. Start by uploading a video or image in Analyze Studio. Live camera indexes and authenticated RTSP/HTTP streams are supported via the `camera-video` CLI (`--live-buffer`, `--reconnect-attempts`, `--stream-credentials-env`).</p>
+            <summary>How is chain of custody preserved on ingested footage?</summary>
+            <p>Every upload is hashed incrementally with SHA-256 as bytes land on disk, and every ingestion, case update, bookmark, verdict, replay, and report export appends a SHA-256 linked record to the SQLite `audit_log` ledger.</p>
           </details>
           <details>
-            <summary>Where does my footage go?</summary>
-            <p>All uploads and results stay on your machine inside the local workspace directory and SQLite database (`fieldnote.db`) until you delete them. Nothing is published or uploaded externally.</p>
+            <summary>Can I align multiple cameras whose DVR clocks are wrong?</summary>
+            <p>Yes. Set a clip's recorded UTC start timestamp and positive/negative DVR clock offset (in seconds) during intake or inside the Case Desk. Evidence search and case reports display aligned wall-clock times automatically.</p>
+          </details>
+          <details>
+            <summary>Are AI scores or linked entities treated as legal proof?</summary>
+            <p>No. Detections, predicates, and candidate events remain explicitly separated from human-verified verdicts, pinned frame bookmarks, and investigator entity links. Real-world accuracy requires evaluation on reviewed footage.</p>
+          </details>
+          <details>
+            <summary>Do redactions modify my original evidence file?</summary>
+            <p>Never. Zoom, brightness/contrast enhancement, and bystander redaction boxes are non-destructive canvas layers applied when viewing or exporting still PNG snapshots; original uploaded media remains untouched.</p>
           </details>
           <details>
             <summary>Does it analyze the entire recording?</summary>
-            <p>Videos are sampled at your selected stride up to the frame limit. Always check Coverage &amp; processing details on the card—completing a 30-frame quick look does not imply full-clip coverage.</p>
-          </details>
-          <details>
-            <summary>How reliable are the findings?</summary>
-            <p>Findings are pretrained model predictions and rule-based temporal event candidates, not verified facts. Review the source frame/video and verify annotations with `camera-benchmark` before drawing conclusions.</p>
-          </details>
-          <details>
-            <summary>How fast does analysis run?</summary>
-            <p>Runtime depends on CPU/CUDA hardware and sample limit. With `--warm-worker` enabled, loaded weights remain cached across consecutive jobs so startup overhead only happens once.</p>
-          </details>
-          <details>
-            <summary>What can I export?</summary>
-            <p>Download raw JSONL session outputs directly from Workspace. Inside Review, save verdicts to SQLite, export full session JSON, draw zones &amp; replay rules, and evaluate ground-truth metrics live.</p>
+            <p>Videos are sampled at your selected stride up to the frame limit. Inside Review, the original video player also provides `−1f / +1f` frame stepping and variable speed (`0.25×`–`2×`) to inspect moments between sampled frames.</p>
           </details>
         </div>
       </div>
@@ -448,7 +625,7 @@
   <footer class="wrap app-footer">
     <div>
       <a class="brand" href="#overview" data-nav="overview">fieldnote<span class="brand-dot">.</span></a>
-      <p>Visual intelligence, made verifiable.</p>
+      <p>Visual intelligence &amp; forensic review workbench.</p>
     </div>
     <div>
       <span class="footer-label">BUILT WITH RELATEANYTHING</span>
@@ -457,6 +634,6 @@
     </div>
   </footer>
 
-  <noscript><p class="noscript">Enable JavaScript to navigate tabs, inspect the interactive example, and manage workspace jobs.</p></noscript>
+  <noscript><p class="noscript">Enable JavaScript to navigate workspace tabs, manage cases, and review evidence.</p></noscript>
 </body>
 </html>

@@ -8,9 +8,11 @@ const node = (tag, value, className = '') => {
 };
 let uploading = false, activeJob = false, online = false, refreshing = false;
 let eventSource = null;
+let knownCases = [];
+let selectedCaseId = null;
 const cards = new Map();
 const statusNames = {processing: 'Analyzing', cancelling: 'Stopping', completed: 'Ready to review', failed: 'Needs attention', cancelled: 'Stopped', interrupted: 'Interrupted'};
-const VALID_ROUTES = new Set(['overview', 'demo', 'analyze', 'history', 'questions']);
+const VALID_ROUTES = new Set(['overview', 'cases', 'search', 'demo', 'analyze', 'history', 'questions']);
 
 function navigateTo(route, pushHash = true) {
   const target = route === 'features' ? 'overview' : (VALID_ROUTES.has(route) ? route : 'overview');
@@ -27,6 +29,10 @@ function navigateTo(route, pushHash = true) {
     history.replaceState(null, '', '#' + target);
   }
   window.scrollTo({top: 0, behavior: 'auto'});
+  if (target === 'cases') {
+    loadCases();
+    loadAudit();
+  }
 }
 
 function uploadError(file, mode) {
@@ -162,6 +168,23 @@ el('show-boxes').addEventListener('change', () => {
   if (el('demo-svg')) el('demo-svg').style.display = show ? '' : 'none';
 });
 
+function syncCaseSelects() {
+  for (const selId of ['case-select', 'search-case']) {
+    const sel = el(selId);
+    if (!sel) continue;
+    const prev = sel.value;
+    const defaultLabel = selId === 'case-select' ? 'Unassigned standalone clip' : 'All Cases & Unassigned Clips';
+    sel.replaceChildren(node('option', defaultLabel));
+    sel.firstChild.value = '';
+    for (const c of knownCases) {
+      const opt = node('option', `${c.case_number} · ${c.title}`);
+      opt.value = c.id;
+      sel.append(opt);
+    }
+    if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  }
+}
+
 function jobCard(job) {
   const card = node('article', '', 'job');
   card.dataset.jobId = job.id;
@@ -175,6 +198,20 @@ function jobCard(job) {
   date.dateTime = job.created;
   heading.append(title, date);
   card.append(heading);
+  if (job.camera_label || job.source_sha256 || job.case_id) {
+    const custody = node('div', '', 'custody-strip');
+    if (job.camera_label) custody.append(node('span', `Cam: ${job.camera_label}`, 'mono-chip'));
+    if (job.source_sha256) {
+      const shaChip = node('span', `SHA-256: ${job.source_sha256.slice(0, 12)}…`, 'mono-chip');
+      shaChip.title = job.source_sha256;
+      custody.append(shaChip);
+    }
+    if (job.case_id) {
+      const foundCase = knownCases.find(c => c.id === job.case_id);
+      custody.append(node('span', `Case: ${foundCase ? foundCase.case_number : job.case_id}`, 'mono-chip'));
+    }
+    card.append(custody);
+  }
   if (job.status === 'processing' || job.status === 'cancelling') {
     const steps = node('div', '', 'processing-steps');
     steps.append(node('span', '✓ Upload ready'), node('span', job.status === 'cancelling' ? 'Stopping analysis…' : job.frames_processed ? '● Understanding your footage' : '● Preparing models', 'current'), node('span', '○ Review findings'));
@@ -242,7 +279,7 @@ function jobCard(job) {
       try {
         await jsonRequest('/api/jobs/' + job.id, {method: 'DELETE'});
         message('Analysis removed from your local workspace.');
-        await Promise.all([refresh(), loadSystemStatus()]);
+        await Promise.all([refresh(), loadSystemStatus(), loadCases()]);
       } catch (error) {
         message(error.message, true);
         remove.disabled = false;
@@ -251,6 +288,33 @@ function jobCard(job) {
     actions.append(remove);
   }
   card.append(actions);
+  if (knownCases.length && !['processing', 'cancelling'].includes(job.status)) {
+    const assignRow = node('div', '', 'job-assign-row');
+    const assignSelect = document.createElement('select');
+    assignSelect.setAttribute('aria-label', 'Assign analysis to case');
+    const un = node('option', 'Case: Unassigned'); un.value = '';
+    assignSelect.append(un);
+    for (const c of knownCases) {
+      const opt = node('option', `${c.case_number} · ${c.title}`);
+      opt.value = c.id;
+      assignSelect.append(opt);
+    }
+    assignSelect.value = job.case_id || '';
+    assignSelect.onchange = async () => {
+      try {
+        await jsonRequest(`/api/jobs/${job.id}/metadata`, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({case_id: assignSelect.value || null}),
+        });
+        await Promise.all([refresh(), loadCases()]);
+      } catch (error) {
+        message(error.message, true);
+      }
+    };
+    assignRow.append(assignSelect);
+    card.append(assignRow);
+  }
   if (job.error) card.append(node('p', job.error, 'error'));
   const details = node('details', '');
   details.append(node('summary', 'Coverage & processing details'), node('p', job.coverage || 'Coverage has not been recorded yet.'), node('p', `Sample limit: ${job.limit}. Images use a single result. Completion does not guarantee the whole recording was analyzed.`));
@@ -270,7 +334,7 @@ function matchesJob(job, query, filter) {
   const statuses = {active: ['processing', 'cancelling'], attention: ['failed', 'cancelled', 'interrupted']};
   if (filter !== 'all' && !(statuses[filter] || [filter]).includes(job.status)) return false;
   const title = job.mode === 'scene' ? 'Scene analysis' : 'Plate reading';
-  return `${title} ${job.id} ${job.created} ${new Date(job.created).toLocaleString()}`.toLowerCase().includes(query.trim().toLowerCase());
+  return `${title} ${job.camera_label || ''} ${job.id} ${job.created} ${new Date(job.created).toLocaleString()}`.toLowerCase().includes(query.trim().toLowerCase());
 }
 function applyFilters() {
   let visible = 0;
@@ -317,8 +381,9 @@ function applyJobs(jobs) {
   const empty = el('jobs').querySelector('.empty-state');
   if (empty && jobs.length) empty.remove();
   let previous = null;
+  const casesKey = knownCases.map(c => c.id).join(',');
   for (const job of jobs) {
-    const signature = JSON.stringify(job);
+    const signature = JSON.stringify(job) + '|' + casesKey;
     let entry = cards.get(job.id);
     if (!entry || entry.signature !== signature) {
       const card = jobCard(job);
@@ -384,6 +449,373 @@ function connectEvents() {
   }
 }
 
+/* Detective Cases Command Center, Audit Chain & Cross-Clip Search */
+async function loadAudit() {
+  const pill = el('audit-badge');
+  const txt = el('audit-verify-text');
+  const list = el('audit-log-list');
+  if (!pill) return;
+  try {
+    const data = await jsonRequest('/api/audit?limit=40');
+    pill.className = `audit-pill ${data.chain_valid ? 'verified' : 'tampered'}`;
+    pill.textContent = data.chain_valid
+      ? `✓ Audit Chain Verified (${data.chain_count} entries)`
+      : `⚠ Audit Integrity Warning (${data.chain_count} entries)`;
+    if (txt) {
+      txt.textContent = data.chain_valid
+        ? `SHA-256 chain verified intact across ${data.chain_count} logged custody events.`
+        : 'Tamper check detected a hash mismatch in audit_log.';
+    }
+    if (list) {
+      list.replaceChildren();
+      if (!data.entries.length) list.append(node('p', 'No custody events logged yet.', 'muted'));
+      for (const item of data.entries.slice(0, 18)) {
+        const row = node('div', '', 'audit-row');
+        row.append(
+          node('span', `${new Date(item.timestamp).toLocaleString()} · ${item.action}`),
+          node('span', `${item.target_type}:${item.target_id.slice(0, 14)} · ${item.entry_hash.slice(0, 12)}…`),
+        );
+        list.append(row);
+      }
+    }
+  } catch {
+    pill.textContent = 'Audit chain unavailable';
+  }
+}
+
+async function loadCaseDetail(caseId) {
+  if (!caseId) return;
+  const empty = el('case-empty');
+  const panel = el('case-detail-panel');
+  try {
+    const data = await jsonRequest(`/api/cases/${encodeURIComponent(caseId)}`);
+    const c = data.case;
+    if (empty) empty.hidden = true;
+    if (panel) panel.hidden = false;
+    el('detail-case-num').textContent = c.case_number;
+    el('detail-case-title').textContent = c.title;
+    el('detail-case-investigator').textContent = `Investigator: ${c.investigator || 'Unassigned'} · Updated ${new Date(c.updated_at).toLocaleString()}`;
+    el('detail-case-notes').textContent = c.notes || 'No investigator notes.';
+    el('detail-case-status').value = c.status;
+    el('case-report-link').href = `/cases/${encodeURIComponent(c.id)}/report`;
+
+    const mediaHost = el('case-media-list');
+    mediaHost.replaceChildren();
+    if (!data.jobs.length) {
+      mediaHost.append(node('p', 'No media assigned to this case yet. Assign clips in Workspace or upload via Analyze.', 'muted'));
+    }
+    for (const j of data.jobs) {
+      const card = node('div', '', 'dossier-card');
+      const top = node('div', '', 'dossier-top');
+      top.append(
+        node('strong', `${j.camera_label || j.original_filename || j.id.slice(0, 8)} (${j.mode})`),
+        node('span', j.status, `status ${j.status}`),
+      );
+      const shaText = j.source_sha256 ? `SHA-256: ${j.source_sha256}` : 'SHA-256: not recorded';
+      const calRow = node('div', '', 'calibration-row');
+      const startIn = document.createElement('input');
+      startIn.type = 'text';
+      startIn.placeholder = 'Recorded start UTC ISO (e.g. 2026-11-22T14:30:00Z)';
+      startIn.value = j.recorded_start_iso || '';
+      const offIn = document.createElement('input');
+      offIn.type = 'number';
+      offIn.step = '0.1';
+      offIn.placeholder = 'Offset (s)';
+      offIn.value = String(j.clock_offset_seconds ?? 0);
+      const saveCal = node('button', 'Save Calibration');
+      saveCal.type = 'button';
+      saveCal.onclick = async () => {
+        saveCal.disabled = true;
+        try {
+          await jsonRequest(`/api/jobs/${j.id}/metadata`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              recorded_start_iso: startIn.value.trim() || null,
+              clock_offset_seconds: Number(offIn.value || 0),
+            }),
+          });
+          await Promise.all([loadCaseDetail(caseId), loadAudit(), refresh()]);
+        } catch (err) {
+          saveCal.textContent = err.message;
+        } finally {
+          saveCal.disabled = false;
+        }
+      };
+      calRow.append(startIn, offIn, saveCal);
+      const btns = node('div', '', 'page-actions');
+      if (j.status === 'completed') {
+        const rev = node('a', 'Forensic Review ↗', 'button small dark');
+        rev.href = `/jobs/${j.id}/review`;
+        btns.append(rev);
+      }
+      const unlink = node('button', 'Unassign', 'icon-btn');
+      unlink.type = 'button';
+      unlink.onclick = async () => {
+        await jsonRequest(`/api/jobs/${j.id}/metadata`, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({case_id: null}),
+        });
+        await Promise.all([loadCases(), refresh(), loadAudit()]);
+      };
+      btns.append(unlink);
+      card.append(top, node('span', shaText, 'mono-chip'), calRow, btns);
+      mediaHost.append(card);
+    }
+
+    const bmHost = el('case-bookmarks-list');
+    bmHost.replaceChildren();
+    if (!data.bookmarks.length) {
+      bmHost.append(node('p', 'No pinned bookmarks yet. Open any recording in Forensic Review and pin key frames.', 'muted'));
+    }
+    for (const bm of data.bookmarks) {
+      const card = node('div', '', 'dossier-card');
+      const top = node('div', '', 'dossier-top');
+      top.append(
+        node('span', `${bm.tag.toUpperCase()} · frame #${bm.frame_index}`, 'status'),
+        node('span', bm.wall_clock || `t=${bm.timestamp_seconds.toFixed(2)}s`, 'mono-chip'),
+      );
+      const act = node('div', '', 'page-actions');
+      const jump = node('a', 'Inspect Frame ↗', 'button small dark');
+      jump.href = `/jobs/${bm.job_id}/review#frame=${bm.frame_index}`;
+      const del = node('button', 'Remove', 'danger-btn icon-btn');
+      del.type = 'button';
+      del.onclick = async () => {
+        await jsonRequest(`/api/bookmarks/${bm.id}`, {method: 'DELETE'});
+        await Promise.all([loadCaseDetail(caseId), loadCases(), loadAudit()]);
+      };
+      act.append(jump, del);
+      card.append(top, node('strong', bm.caption), act);
+      bmHost.append(card);
+    }
+
+    const entHost = el('case-entities-list');
+    entHost.replaceChildren();
+    if (!data.entities.length) {
+      entHost.append(node('p', 'No manually linked subject or vehicle dossiers yet.', 'muted'));
+    }
+    for (const ent of data.entities) {
+      const card = node('div', '', 'dossier-card');
+      const top = node('div', '', 'dossier-top');
+      top.append(node('strong', ent.label), node('span', ent.kind.toUpperCase(), 'status'));
+      const tracks = ent.linked_tracks.map(t => `${t.job_id.slice(0, 8)}:${t.track_id}`).join(', ') || 'None';
+      const del = node('button', 'Delete', 'danger-btn icon-btn');
+      del.type = 'button';
+      del.onclick = async () => {
+        await jsonRequest(`/api/entities/${ent.id}`, {method: 'DELETE'});
+        await Promise.all([loadCaseDetail(caseId), loadAudit()]);
+      };
+      card.append(top, node('p', ent.description || 'No notes', 'muted'), node('span', `Linked tracks: ${tracks}`, 'mono-chip'), del);
+      entHost.append(card);
+    }
+  } catch {
+    if (empty) empty.hidden = false;
+    if (panel) panel.hidden = true;
+  }
+}
+
+async function loadCases() {
+  const host = el('cases-list');
+  try {
+    const data = await jsonRequest('/api/cases');
+    knownCases = data.cases || [];
+    if (el('nav-case-count')) el('nav-case-count').textContent = String(knownCases.length);
+    syncCaseSelects();
+    if (!host) return;
+    host.replaceChildren();
+    if (!knownCases.length) {
+      host.append(node('p', 'No cases opened yet. Use the form above to open your first case.', 'muted'));
+      selectedCaseId = null;
+      if (el('case-empty')) el('case-empty').hidden = false;
+      if (el('case-detail-panel')) el('case-detail-panel').hidden = true;
+      return;
+    }
+    if (!selectedCaseId || !knownCases.some(c => c.id === selectedCaseId)) {
+      selectedCaseId = knownCases[0].id;
+    }
+    for (const c of knownCases) {
+      const item = node('button', '', `case-item${c.id === selectedCaseId ? ' is-selected' : ''}`);
+      item.type = 'button';
+      const top = node('div', '', 'case-item-top');
+      top.append(node('span', c.case_number), node('span', c.status.replace('_', ' ')));
+      item.append(top, node('strong', c.title), node('small', `${c.job_count || 0} clips · ${c.bookmark_count || 0} bookmarks`));
+      item.onclick = () => {
+        selectedCaseId = c.id;
+        host.querySelectorAll('.case-item').forEach(b => b.classList.remove('is-selected'));
+        item.classList.add('is-selected');
+        loadCaseDetail(c.id);
+      };
+      host.append(item);
+    }
+    if (selectedCaseId) await loadCaseDetail(selectedCaseId);
+  } catch {
+    if (host) host.textContent = 'Could not load cases.';
+  }
+}
+
+if (el('case-create-form')) {
+  el('case-create-form').addEventListener('submit', async evt => {
+    evt.preventDefault();
+    const msg = el('case-form-msg');
+    try {
+      const res = await jsonRequest('/api/cases', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          case_number: el('new-case-number').value.trim(),
+          title: el('new-case-title').value.trim(),
+          investigator: el('new-case-investigator').value.trim(),
+          notes: el('new-case-notes').value.trim(),
+        }),
+      });
+      selectedCaseId = res.case.id;
+      el('case-create-form').reset();
+      if (msg) msg.textContent = `Opened ${res.case.case_number}.`;
+      await Promise.all([loadCases(), loadAudit(), refresh()]);
+    } catch (err) {
+      if (msg) msg.textContent = err.message;
+    }
+  });
+}
+
+if (el('detail-case-status')) {
+  el('detail-case-status').addEventListener('change', async () => {
+    if (!selectedCaseId) return;
+    await jsonRequest(`/api/cases/${encodeURIComponent(selectedCaseId)}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({status: el('detail-case-status').value}),
+    });
+    await Promise.all([loadCases(), loadAudit()]);
+  });
+}
+
+if (el('case-delete-btn')) {
+  let deleteArmed = false;
+  let deleteTimer = null;
+  el('case-delete-btn').addEventListener('click', async () => {
+    if (!selectedCaseId) return;
+    const btn = el('case-delete-btn');
+    if (!deleteArmed) {
+      deleteArmed = true;
+      btn.textContent = 'Confirm delete case';
+      btn.classList.add('confirming');
+      deleteTimer = setTimeout(() => {
+        deleteArmed = false;
+        btn.textContent = 'Delete Case';
+        btn.classList.remove('confirming');
+      }, 4000);
+      return;
+    }
+    clearTimeout(deleteTimer);
+    deleteArmed = false;
+    btn.textContent = 'Delete Case';
+    btn.classList.remove('confirming');
+    await jsonRequest(`/api/cases/${encodeURIComponent(selectedCaseId)}`, {method: 'DELETE'});
+    selectedCaseId = null;
+    await Promise.all([loadCases(), refresh(), loadAudit()]);
+  });
+}
+
+if (el('entity-form')) {
+  el('entity-form').addEventListener('submit', async evt => {
+    evt.preventDefault();
+    if (!selectedCaseId) return;
+    const msg = el('entity-msg');
+    try {
+      const links = el('entity-tracks').value
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(part => {
+          const [jid, tid] = part.split(':').map(x => x.trim());
+          if (!jid || !tid) throw Error('Format tracks as jobId:trackId (comma-separated).');
+          return {job_id: jid, track_id: tid};
+        });
+      await jsonRequest(`/api/cases/${encodeURIComponent(selectedCaseId)}/entities`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          label: el('entity-label').value.trim(),
+          kind: el('entity-kind').value,
+          linked_tracks: links,
+          description: el('entity-desc').value.trim(),
+        }),
+      });
+      el('entity-form').reset();
+      if (msg) msg.textContent = 'Entity dossier link saved.';
+      await Promise.all([loadCaseDetail(selectedCaseId), loadAudit()]);
+    } catch (err) {
+      if (msg) msg.textContent = err.message;
+    }
+  });
+}
+
+async function runLeadSearch(evt) {
+  if (evt) evt.preventDefault();
+  const params = new URLSearchParams();
+  if (el('search-q')?.value.trim()) params.set('q', el('search-q').value.trim());
+  if (el('search-case')?.value) params.set('case_id', el('search-case').value);
+  if (el('search-label')?.value.trim()) params.set('label', el('search-label').value.trim());
+  if (el('search-color')?.value.trim()) params.set('color', el('search-color').value.trim());
+  if (el('search-plate')?.value.trim()) params.set('plate', el('search-plate').value.trim());
+  if (el('search-event')?.value.trim()) params.set('event_type', el('search-event').value.trim());
+  const host = el('search-results');
+  const summary = el('search-summary');
+  if (!host) return;
+  try {
+    const data = await jsonRequest('/api/search?' + params.toString());
+    const results = data.results || [];
+    if (summary) summary.textContent = `${results.length} matching observation${results.length === 1 ? '' : 's'}`;
+    host.replaceChildren();
+    if (!results.length) {
+      const empty = node('div', '', 'empty-state');
+      empty.append(node('strong', 'No matching leads found'), node('span', 'Try broader keywords, partial plate characters, or clear the case filter.'));
+      host.append(empty);
+      return;
+    }
+    for (const hit of results) {
+      const card = node('article', '', 'search-card');
+      if (hit.preview_url) {
+        const img = document.createElement('img');
+        img.src = hit.preview_url;
+        img.alt = `Frame ${hit.frame_index}`;
+        card.append(img);
+      } else {
+        card.append(node('div', `FRAME ${hit.frame_index}`, 'search-thumb-empty'));
+      }
+      const info = node('div', '');
+      const top = node('div', '', 'dossier-top');
+      top.append(node('span', hit.match_kind.toUpperCase(), 'status'), node('span', hit.wall_clock || `t=${hit.timestamp_seconds.toFixed(2)}s`, 'mono-chip'));
+      const openLink = node('a', 'Inspect Frame ↗', 'button small dark');
+      openLink.href = hit.review_url;
+      openLink.style.marginTop = '8px';
+      info.append(
+        top,
+        node('strong', hit.summary),
+        node('p', `Camera: ${hit.camera_label}${hit.source_sha256 ? ' · SHA-256 ' + hit.source_sha256.slice(0, 10) + '…' : ''}`, 'muted'),
+        openLink,
+      );
+      card.append(info);
+      host.append(card);
+    }
+  } catch (err) {
+    if (summary) summary.textContent = err.message;
+  }
+}
+
+if (el('lead-search-form')) {
+  el('lead-search-form').addEventListener('submit', runLeadSearch);
+}
+if (el('search-reset')) {
+  el('search-reset').addEventListener('click', () => {
+    el('lead-search-form').reset();
+    if (el('search-summary')) el('search-summary').textContent = '';
+    runLeadSearch();
+  });
+}
+
 let previewUrl;
 function updateModeUI() {
   const wrap = el('crops-wrap');
@@ -407,7 +839,7 @@ function fileSelected() {
     previewUrl = URL.createObjectURL(file);
     const target = /\.(jpe?g|png)$/i.test(file.name) ? image : video;
     target.src = previewUrl; target.hidden = false;
-    el('preview-note').textContent = 'Preview only. Analysis starts when you choose Analyze footage.';
+    el('preview-note').textContent = 'Preview only. Analysis starts when you choose Ingest & Analyze Footage.';
   }
 }
 el('preview-video').addEventListener('error', () => {
@@ -435,11 +867,11 @@ el('upload').addEventListener('submit', event => {
   const file = el('file').files[0], error = uploadError(file, el('mode').value);
   if (error) {message(error, true); return;}
   uploading = true; updateStart(); setUploadStep(2);
-  const controlIds = ['file', 'mode', 'limit', 'clear-file', 'stride', 'profile', 'device', 'vehicle-crops'];
+  const controlIds = ['file', 'mode', 'limit', 'clear-file', 'stride', 'profile', 'device', 'vehicle-crops', 'case-select', 'camera-label', 'recorded-start', 'clock-offset'];
   for (const id of controlIds) if (el(id)) el(id).disabled = true;
   presets.forEach(input => {input.disabled = true;});
   el('progress').value = 0; el('progress').hidden = false;
-  message('Uploading to your local workspace…');
+  message('Hashing SHA-256 & uploading to local workspace…');
   const request = new XMLHttpRequest();
   request.open('POST', '/api/jobs');
   request.setRequestHeader('Content-Type', 'application/octet-stream');
@@ -448,10 +880,15 @@ el('upload').addEventListener('submit', event => {
   request.setRequestHeader('X-File-Extension', ext);
   request.setRequestHeader('X-Analysis-Mode', el('mode').value);
   request.setRequestHeader('X-Frame-Limit', el('limit').value);
+  request.setRequestHeader('X-Original-Filename', file.name.replace(/[^\x20-\x7e]/g, '_').slice(0, 160));
   if (el('stride')) request.setRequestHeader('X-Frame-Stride', el('stride').value);
   if (el('profile')) request.setRequestHeader('X-Reasoning-Profile', el('profile').value);
   if (el('device')) request.setRequestHeader('X-Device', el('device').value);
   if (el('vehicle-crops')) request.setRequestHeader('X-Vehicle-Crops', el('vehicle-crops').checked ? '1' : '0');
+  if (el('case-select')?.value) request.setRequestHeader('X-Case-Id', el('case-select').value);
+  if (el('camera-label')?.value.trim()) request.setRequestHeader('X-Camera-Label', el('camera-label').value.trim().replace(/[^\x20-\x7e]/g, '').slice(0, 100));
+  if (el('recorded-start')?.value.trim()) request.setRequestHeader('X-Recorded-Start', el('recorded-start').value.trim().slice(0, 40));
+  if (el('clock-offset')?.value) request.setRequestHeader('X-Clock-Offset', el('clock-offset').value);
   request.upload.onprogress = e => {if (e.lengthComputable) {el('progress').value = e.loaded / e.total * 100; if (e.loaded === e.total) message('Upload received. Starting your analysis…');}};
   request.onload = () => {
     try {
@@ -468,7 +905,7 @@ el('upload').addEventListener('submit', event => {
     uploading = false; el('progress').hidden = true;
     for (const id of controlIds) if (el(id)) el(id).disabled = false;
     presets.forEach(input => {input.disabled = false;});
-    updateStart(); refresh(); loadSystemStatus();
+    updateStart(); refresh(); loadSystemStatus(); loadCases();
   };
   request.send(file);
 });
@@ -548,6 +985,8 @@ function initRouterAndTheme() {
 initRouterAndTheme();
 loadDemo();
 loadSystemStatus();
+loadCases();
+loadAudit();
 updateModeUI();
 updateStart();
 refresh();
