@@ -4,8 +4,10 @@ From the repository root, after installing the project's inference, detection,
 video and optional plate dependencies:
 
 ```powershell
-.\.venv\Scripts\python.exe -m camera_system.app --port 8780
+.\.venv\Scripts\python.exe -m camera_system.app --port 8780 --warm-worker --strict-uploads
 ```
+
+For non-loopback hosting (including inside Docker with `docker compose up --build`), bind `--host 0.0.0.0` alongside `--auth-token-env FIELDNOTE_AUTH_TOKEN` so API access requires a bearer or header token. Set `--retention-days` and `--max-disk-mb` to prune old completed jobs automatically.
 
 Open http://127.0.0.1:8780/. The Fieldnote homepage includes an interactive saved
 inference example: select a person, horse or relationship note to highlight its
@@ -13,11 +15,10 @@ regions. It uses the real 11 October CPU result with manual regions, works witho
 loading model weights, and includes photograph credits and downloadable provenance.
 
 Drop a video or image into the upload area or browse for a file. Open **Analysis
-settings** to choose scene analysis or
-video plate reading, set the maximum sampled frames, and start. When processing
+settings** to choose scene analysis or video plate reading, frame limit, stride (`auto` or `1..120`), reasoning profile (`default`, `behavior`, or `zones`), compute device (`cpu`, `auto`, or `cuda`), optional vehicle crops, and start. When processing
 finishes, choose **Explore findings** or download the JSONL result. Scene analysis
 includes detection, tracking, person pose observations, temporal image movement,
-scheduled relationships and the existing candidate-event reasoning.
+scheduled relationships and the existing candidate-event reasoning. The workspace header displays live runtime capabilities (`/api/system/status`) and receives instant status updates over Server-Sent Events (`/api/events`, with automatic 3-second polling fallback).
 
 The job list shows preparation/analysis stages, processed frame counts and a
 **Stop analysis** button for active jobs. Progress does not invent a completion
@@ -116,20 +117,12 @@ to that provider only after the user's confirmation.
 
 ## Limits and storage
 
-- This server binds to loopback only. It is a single-user development workspace,
-  not a public hosting server. No accounts or remote access are provided.
-- One job at a time, 512 MB per upload, up to 600 sampled video frames.
-- Sampling defaults to every 15th frame. The default 30-frame Quick look limit may stop before EOF.
-- Scene relationship inference runs on every sampled frame (`--relation-every 1`).
-- Each job has a one-hour process timeout. Keep the server running while a job
-  is active. On restart, unfinished metadata is shown as interrupted.
-- Uploads, JSONL, review HTML and processing logs are under
-  `outputs/workspace/<job-id>/`. They are retained; no automatic deletion occurs.
-- Files are named by the server; user filenames are not filesystem paths.
-- Network stream support remains in the CLI. This web upload form accepts local
-  files; it does not start external camera connections.
-- Polished six-screen Figma design, accounts, deployment and camera management
-  remain separate release work.
+- Loopback (`127.0.0.1` / `localhost`) binds locally with same-origin checks. Non-loopback `--host` binding requires `--auth-token-env <ENV_VAR>` (`Authorization: Bearer`, `X-Fieldnote-Token`, or session cookie).
+- One job executes at a time (either isolated subprocess or persistent `--warm-worker`), with up to 512 MB per upload and up to 600 sampled video frames.
+- Workspace metadata, verdicts, saved zones, annotations, and evaluations persist in SQLite (`outputs/workspace/fieldnote.db`) synced alongside per-job `job.json` files. Completed jobs can be deleted from the workspace UI (`DELETE /api/jobs/<id>`), or pruned automatically with `--retention-days` and `--max-disk-mb`.
+- Inside `review.html` served from the workspace, reviewers have keyboard navigation (`Left`/`Right`/`Space`/`B`/`P`/`1`/`2`/`3`/`0`), server-synced verdicts (`PUT /api/jobs/<id>/verdicts` preserved across replays), an interactive canvas Zone & Replay studio (`/api/zones` and `/api/jobs/<id>/replay`), and an inline Annotation & Evaluation studio (`/api/jobs/<id>/annotations` and `/api/jobs/<id>/evaluate`).
+- Files are named by the server; user filenames are not filesystem paths. `--strict-uploads` (auto-enabled on non-loopback binds) verifies file magic bytes match extensions.
+- Live RTSP/HTTP stream ingestion and camera capture (`--stream-credentials-env`, `--live-buffer`, `--reconnect-attempts`) run in the `camera-video` CLI without writing credentials to session logs or JSONL records.
 
 ## Temporal observations
 

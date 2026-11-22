@@ -22,7 +22,7 @@ from .people import PersonAnalyzer, PoseEstimator, preview_image, save_preview_i
 from .plates import scan as scan_plates
 from .reasoning import Reasoner, load_reasoning
 from .relations import RelateAnythingPredictor
-from .tracking import IoUTracker
+from .tracking import make_tracker
 from .video import FrameSource
 from .video_cli import emit, resolve_stride
 
@@ -277,7 +277,7 @@ def execute_job_request(req: dict, cache: ModelCache, emit_event=None) -> dict:
     reasoning_settings = load_reasoning(reasoning_config)
     reasoner = Reasoner(reasoning_settings)
     behavior = BehaviorAnalyzer()
-    tracker = IoUTracker()
+    tracker = make_tracker(str(req.get("tracker") or "iou"))
     frames = FrameSource(str(source), stride)
     with ExitStack() as stack:
         stack.enter_context(frames)

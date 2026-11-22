@@ -97,6 +97,7 @@ refer to their existing paths. Image-command output filenames must not already e
 
 ## Historical verification
 
+- [Fullstack completion, Docker deployment, calibration benchmark, and Kalman tracking](fullstack-completion-2026-11-22.md)
 - [Latest continuation and annotation-export checks](continuation-2026-10-09.md)
 - [Original prototype verification](prototype-verification.md)
 - [Phase 3 video checks](phase3-video.md)

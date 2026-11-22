@@ -78,9 +78,12 @@ The detector uses Ultralytics' documented [prediction API](https://docs.ultralyt
 See [video/camera instructions and verification](docs/phase3-video.md). Install `.[dev,inference,detection,video]`, then run from the repository root:
 
 ```powershell
-.\.venv\Scripts\camera-video.exe --video path/to/clip.mp4 --stride 5 --max-frames 100 --output outputs/clip.jsonl
-.\.venv\Scripts\camera-video.exe --camera 0 --max-frames 100 --output outputs/camera.jsonl
+.\.venv\Scripts\camera-video.exe --video path/to/clip.mp4 --stride 5 --tracker kalman --max-frames 100 --output outputs/clip.jsonl
+.\.venv\Scripts\camera-video.exe --camera 0 --live-buffer --reconnect-attempts 3 --max-frames 100 --output outputs/camera.jsonl
+.\.venv\Scripts\camera-benchmark.exe outputs/demo/session.jsonl --truth outputs/demo/truth.json --output-dir outputs/demo-bench
 ```
+
+For the fullstack web workspace (`camera-workspace`) or container deployment (`Dockerfile` and `docker-compose.yml`), see [Local workspace](docs/local-workspace.md) and [Fullstack completion notes](docs/fullstack-completion-2026-11-22.md).
 
 Both models load once. Results are flushed per frame, followed by a summary. Output paths must not already exist. The camera path has no preview window; Ctrl+C stops processing. Region IDs are local to a frame; persistent track IDs connect observations and relation endpoints across frames.
 

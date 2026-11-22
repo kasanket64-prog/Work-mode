@@ -883,6 +883,12 @@ def make_app(
                 return self.respond(200, asset, content_type)
             if path == "/api/jobs":
                 return self.respond(200, jobs.snapshot())
+            job_get = re.fullmatch(r"/api/jobs/([a-f0-9]{32})", path)
+            if job_get:
+                found = next((j for j in jobs.snapshot() if j["id"] == job_get[1]), None)
+                if found is None:
+                    return self.respond(404, {"error": "Analysis not found"})
+                return self.respond(200, found)
             if path == "/api/events":
                 return self._serve_sse()
             if path == "/api/system/status":

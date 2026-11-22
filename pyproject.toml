@@ -26,6 +26,7 @@ camera-relations = "camera_system.cli:main"
 camera-replay = "camera_system.replay:main"
 camera-plates = "camera_system.plates:main"
 camera-demo = "camera_system.demo:main"
+camera-benchmark = "camera_system.benchmark:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

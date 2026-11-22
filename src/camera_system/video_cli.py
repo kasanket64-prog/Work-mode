@@ -19,7 +19,7 @@ from .detection import YoloDetector, load_detector_settings
 from .people import PersonAnalyzer, PoseEstimator, preview_image, save_preview_image
 from .reasoning import Reasoner, load_reasoning
 from .relations import RelateAnythingPredictor
-from .tracking import IoUTracker
+from .tracking import make_tracker
 from .video import FrameSource
 
 
@@ -102,6 +102,12 @@ def main(argv=None):
         default=1,
         help="Run fresh relationship inference every N processed frames (default: every frame)",
     )
+    parser.add_argument(
+        "--tracker",
+        choices=["iou", "iou-motion", "kalman"],
+        default="iou",
+        help="Multi-object tracker algorithm (default: iou)",
+    )
     parser.add_argument("--track-iou", type=float, default=0.3)
     parser.add_argument("--track-max-missed", type=int, default=5)
     parser.add_argument("--track-max-age", type=float, default=2.0)
@@ -157,8 +163,13 @@ def main(argv=None):
             detector_settings,
             max_detections=min(detector_settings.max_detections, settings.max_regions),
         )
-        tracker = IoUTracker(
-            args.track_iou, args.track_max_missed, args.track_max_age, motion=args.track_motion
+        tracker_name = "iou-motion" if args.track_motion and args.tracker == "iou" else args.tracker
+        tracker = make_tracker(
+            tracker_name,
+            threshold=args.track_iou,
+            max_missed=args.track_max_missed,
+            max_age_seconds=args.track_max_age,
+            motion=args.track_motion,
         )
         reasoning_settings = load_reasoning(args.reasoning_config)
         reasoner = Reasoner(reasoning_settings)
@@ -228,10 +239,11 @@ def main(argv=None):
                     "max_frames": args.max_frames,
                     "relation_every": args.relation_every,
                     "tracker": {
+                        "algorithm": tracker_name,
                         "iou_threshold": args.track_iou,
                         "max_missed": args.track_max_missed,
                         "max_age_seconds": args.track_max_age,
-                        "motion_prediction": args.track_motion,
+                        "motion_prediction": args.track_motion or tracker_name == "iou-motion",
                     },
                     "buffer_policy": (
                         "latest_frame_overwrite_thread"
