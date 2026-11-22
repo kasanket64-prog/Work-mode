@@ -1,5 +1,21 @@
 # Work-mode
 
+## At a glance
+
+Work-mode is a local intelligent-camera research prototype linking region detection, tracking, relationships and temporal event candidates to a reviewable investigation workspace. Its outputs are **observations for human review**, not independently established real-world facts.
+
+| Question | Source and answer |
+| --- | --- |
+| What is implemented? | [Image/video analysis pipeline](docs/architecture.md), [local workspace](docs/local-workspace.md), and candidate-event review |
+| How can it be used? | Follow the [prototype run guide](docs/prototype-guide.md); optional models and GPU features have separate prerequisites |
+| How is quality checked? | [Automated unit checks](.github/workflows/tests.yml) and [dated verification records](docs/verification.md) |
+| What is not established? | Real-world detection accuracy, calibrated alert performance, live operational suitability, and privacy-safe deployment |
+| What should be improved next? | [Prioritized audit backlog](docs/audit-backlog.md) and independently labeled evaluation |
+
+The project distinguishes functioning local prototype features from measured real-world accuracy and operational readiness. See [project status](docs/README.md) before interpreting earlier milestone results.
+
+---
+
 Local camera-analysis prototype: detection, tracking, relationships, temporal
 event candidates, and an upload/review website.
 
