@@ -27,6 +27,12 @@ function message(value, error = false) {
 function updateStart() {
   el('start').disabled = uploading || activeJob || !online;
 }
+function setUploadStep(step) {
+  ['step-1', 'step-2', 'step-3'].forEach((id, idx) => {
+    const item = el(id);
+    if (item) item.classList.toggle('selected', idx + 1 === step);
+  });
+}
 async function jsonRequest(url, options) {
   const response = await fetch(url, options);
   const result = await response.json();
@@ -62,6 +68,7 @@ async function loadDemo() {
     const data = await jsonRequest('/assets/demo-result.json');
     const [width, height] = data.image_size;
     const boxes = new Map();
+    const centers = new Map();
     for (const region of data.regions) {
       const [x1, y1, x2, y2] = region.box;
       const box = node('div', '', 'region');
@@ -69,8 +76,25 @@ async function loadDemo() {
       box.append(node('span', region.label));
       el('demo-boxes').append(box);
       boxes.set(region.id, box);
+      centers.set(region.id, [((x1 + x2) / 2) / width * 100, ((y1 + y2) / 2) / height * 100]);
     }
     const relationship = data.relations[0];
+    const svg = el('demo-svg');
+    if (svg && relationship && centers.has(relationship.subject_id) && centers.has(relationship.object_id)) {
+      const ns = 'http://www.w3.org/2000/svg';
+      const [sx, sy] = centers.get(relationship.subject_id);
+      const [ox, oy] = centers.get(relationship.object_id);
+      const path = document.createElementNS(ns, 'path');
+      const mx = (sx + ox) / 2;
+      const my = Math.min(sy, oy) - 10;
+      path.setAttribute('d', `M ${sx.toFixed(2)} ${sy.toFixed(2)} Q ${mx.toFixed(2)} ${my.toFixed(2)} ${ox.toFixed(2)} ${oy.toFixed(2)}`);
+      path.setAttribute('class', 'rel-line');
+      const c1 = document.createElementNS(ns, 'circle');
+      c1.setAttribute('cx', sx.toFixed(2)); c1.setAttribute('cy', sy.toFixed(2)); c1.setAttribute('r', '1.4'); c1.setAttribute('class', 'rel-node');
+      const c2 = document.createElementNS(ns, 'circle');
+      c2.setAttribute('cx', ox.toFixed(2)); c2.setAttribute('cy', oy.toFixed(2)); c2.setAttribute('r', '1.4'); c2.setAttribute('class', 'rel-node');
+      svg.replaceChildren(path, c1, c2);
+    }
     const labels = new Map(data.regions.map(r => [r.id, r.label]));
     const notes = data.regions.map((r, i) => ({title: r.label[0].toUpperCase() + r.label.slice(1), subtitle: 'Manually marked region', icon: String(i + 1).padStart(2, '0'), ids: [r.id], description: `The ${r.label} region was supplied manually for this example. The relationship model uses this part of the image to understand the scene.`}));
     notes.push({title: `${labels.get(relationship.subject_id)} ${relationship.predicate} ${labels.get(relationship.object_id)}`, subtitle: 'Predicted relationship', icon: '↗', ids: [relationship.subject_id, relationship.object_id], description: 'The model connects these two regions with “' + relationship.predicate + '”. A relationship adds context beyond identifying individual objects.'});
@@ -82,6 +106,7 @@ async function loadDemo() {
         box.classList.toggle('dim', !notes[index].ids.includes(id));
         box.classList.toggle('active', notes[index].ids.includes(id));
       });
+      if (svg) svg.hidden = notes[index].ids.length < 2;
       el('demo-description').textContent = notes[index].description;
       el('show-boxes').checked = true;
       el('demo-boxes').hidden = false;
@@ -102,7 +127,11 @@ async function loadDemo() {
     el('demo-findings').replaceChildren(node('p', 'The saved example could not load. Refresh the page to try again.', 'error'));
   }
 }
-el('show-boxes').addEventListener('change', () => {el('demo-boxes').hidden = !el('show-boxes').checked;});
+el('show-boxes').addEventListener('change', () => {
+  const show = el('show-boxes').checked;
+  el('demo-boxes').hidden = !show;
+  if (el('demo-svg')) el('demo-svg').style.display = show ? '' : 'none';
+});
 
 function jobCard(job) {
   const card = node('article', '', 'job');
@@ -243,10 +272,12 @@ function applyJobs(jobs) {
     let entry = cards.get(job.id);
     if (!entry || entry.signature !== signature) {
       const card = jobCard(job);
-      if (entry) {card.querySelectorAll('details').forEach((detail, i) => {detail.open = entry.card.querySelectorAll('details')[i]?.open || false;}); entry.card.replaceWith(card);}
-      entry = {signature, card, job}; cards.set(job.id, entry);
+      if (entry) entry.card.replaceWith(card);
+      else el('jobs').insertBefore(card, previous ? previous.nextSibling : el('jobs').firstChild);
+      entry = {card, job, signature};
+      cards.set(job.id, entry);
     }
-    const next = previous ? previous.nextElementSibling : el('jobs').firstElementChild;
+    const next = previous ? previous.nextSibling : el('jobs').firstChild;
     if (next !== entry.card) el('jobs').insertBefore(entry.card, next);
     previous = entry.card;
   }
@@ -262,7 +293,10 @@ function applyJobs(jobs) {
   applyFilters();
   const announcement = jobs.length ? `${jobs.length} analyses. ${activeJob ? 'One is running.' : 'No analysis is running.'}` : 'Your workspace is ready for its first upload.';
   if (el('job-announcement').textContent !== announcement) el('job-announcement').textContent = announcement;
-  if (wasActive && !activeJob) loadSystemStatus();
+  if (wasActive && !activeJob) {
+    loadSystemStatus();
+    if (el('file')?.files?.length) setUploadStep(3);
+  }
   updateStart();
 }
 
@@ -315,6 +349,7 @@ function fileSelected() {
   const error = file ? uploadError(file, el('mode').value) : '';
   message(error, Boolean(error));
   el('file-preview').hidden = !file || Boolean(error);
+  setUploadStep(file && !error ? 2 : 1);
   if (file && !error) {
     previewUrl = URL.createObjectURL(file);
     const target = /\.(jpe?g|png)$/i.test(file.name) ? image : video;
@@ -346,7 +381,7 @@ el('upload').addEventListener('submit', event => {
   if (uploading || activeJob || !online) return;
   const file = el('file').files[0], error = uploadError(file, el('mode').value);
   if (error) {message(error, true); return;}
-  uploading = true; updateStart();
+  uploading = true; updateStart(); setUploadStep(2);
   const controlIds = ['file', 'mode', 'limit', 'clear-file', 'stride', 'profile', 'device', 'vehicle-crops'];
   for (const id of controlIds) if (el(id)) el(id).disabled = true;
   presets.forEach(input => {input.disabled = true;});
@@ -370,6 +405,7 @@ el('upload').addEventListener('submit', event => {
       const result = JSON.parse(request.responseText);
       if (request.status !== 202) throw Error(result.error || 'Upload failed. Please try again.');
       activeJob = true;
+      setUploadStep(3);
       message('Your analysis has started. Follow its progress in your workspace below.');
       el('history').scrollIntoView({behavior: 'auto', block: 'start'});
     } catch (error) {message(error.message, true);}
@@ -383,12 +419,71 @@ el('upload').addEventListener('submit', event => {
   };
   request.send(file);
 });
+
+function initMotionStudio() {
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const revealNodes = document.querySelectorAll('[data-reveal]');
+  if (!reducedMotion && 'IntersectionObserver' in window && revealNodes.length) {
+    document.documentElement.classList.add('js-ready');
+    const io = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          io.unobserve(entry.target);
+        }
+      }
+    }, {threshold: 0.08, rootMargin: '0px 0px -30px 0px'});
+    revealNodes.forEach(n => io.observe(n));
+  } else {
+    revealNodes.forEach(n => n.classList.add('revealed'));
+  }
+
+  let scrollScheduled = false;
+  const updateScroll = () => {
+    scrollScheduled = false;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const ratio = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    document.documentElement.style.setProperty('--scroll-progress', ratio.toFixed(4));
+  };
+  window.addEventListener('scroll', () => {
+    if (!scrollScheduled) {
+      scrollScheduled = true;
+      requestAnimationFrame(updateScroll);
+    }
+  }, {passive: true});
+  updateScroll();
+
+  if (reducedMotion) return;
+  const heroCard = el('hero-visual');
+  if (heroCard) {
+    heroCard.addEventListener('mousemove', e => {
+      const rect = heroCard.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width - 0.5;
+      const py = (e.clientY - rect.top) / rect.height - 0.5;
+      heroCard.style.setProperty('--rx', `${(-py * 6).toFixed(2)}deg`);
+      heroCard.style.setProperty('--ry', `${(px * 7).toFixed(2)}deg`);
+    });
+    heroCard.addEventListener('mouseleave', () => {
+      heroCard.style.setProperty('--rx', '0deg');
+      heroCard.style.setProperty('--ry', '-2deg');
+    });
+  }
+  document.querySelectorAll('.feature-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${(e.clientX - rect.left).toFixed(0)}px`);
+      card.style.setProperty('--my', `${(e.clientY - rect.top).toFixed(0)}px`);
+    });
+  });
+}
+
 loadDemo();
 loadSystemStatus();
 updateModeUI();
 updateStart();
 refresh();
 connectEvents();
+initMotionStudio();
 setInterval(() => {
   if (!eventSource || eventSource.readyState === 2) {
     refresh();
