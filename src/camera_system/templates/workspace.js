@@ -10,6 +10,24 @@ let uploading = false, activeJob = false, online = false, refreshing = false;
 let eventSource = null;
 const cards = new Map();
 const statusNames = {processing: 'Analyzing', cancelling: 'Stopping', completed: 'Ready to review', failed: 'Needs attention', cancelled: 'Stopped', interrupted: 'Interrupted'};
+const VALID_ROUTES = new Set(['overview', 'demo', 'analyze', 'history', 'questions']);
+
+function navigateTo(route, pushHash = true) {
+  const target = route === 'features' ? 'overview' : (VALID_ROUTES.has(route) ? route : 'overview');
+  document.querySelectorAll('.page-view').forEach(section => {
+    section.classList.toggle('is-active', section.dataset.page === target);
+  });
+  document.querySelectorAll('.app-nav a[data-nav]').forEach(link => {
+    const active = link.dataset.nav === target;
+    link.classList.toggle('is-active', active);
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+  if (pushHash && window.location.hash !== '#' + target) {
+    history.replaceState(null, '', '#' + target);
+  }
+  window.scrollTo({top: 0, behavior: 'auto'});
+}
 
 function uploadError(file, mode) {
   if (!file || !file.size) return 'Choose a video or image that is not empty.';
@@ -59,8 +77,14 @@ async function loadSystemStatus() {
       strip.append(node('span', `${ready ? '●' : '○'} ${label}`, `status-pill${ready ? ' ready' : ''}`));
     }
     strip.append(node('span', `Storage: ${mb} MB · ${info.job_count || 0} saved`, 'status-pill'));
+    if (el('kpi-storage')) el('kpi-storage').textContent = `${mb} MB`;
+    if (el('overview-runtime')) {
+      const readyModules = [caps.detection, caps.inference, caps.video, caps.plates, caps.cuda].filter(Boolean).length;
+      el('overview-runtime').textContent = `${info.warm_worker ? 'Warm worker' : 'Subprocess'} · ${readyModules}/5 extras`;
+    }
   } catch {
     strip.textContent = 'Local runtime status unavailable.';
+    if (el('overview-runtime')) el('overview-runtime').textContent = 'Runtime offline';
   }
 }
 async function loadDemo() {
@@ -94,6 +118,11 @@ async function loadDemo() {
       const c2 = document.createElementNS(ns, 'circle');
       c2.setAttribute('cx', ox.toFixed(2)); c2.setAttribute('cy', oy.toFixed(2)); c2.setAttribute('r', '1.4'); c2.setAttribute('class', 'rel-node');
       svg.replaceChildren(path, c1, c2);
+    }
+    if (relationship && typeof relationship.score === 'number') {
+      const pct = Math.max(0, Math.min(100, relationship.score * 100));
+      if (el('demo-score-pct')) el('demo-score-pct').textContent = relationship.score.toFixed(3);
+      if (el('demo-score-bar')) el('demo-score-bar').style.width = `${pct.toFixed(1)}%`;
     }
     const labels = new Map(data.regions.map(r => [r.id, r.label]));
     const notes = data.regions.map((r, i) => ({title: r.label[0].toUpperCase() + r.label.slice(1), subtitle: 'Manually marked region', icon: String(i + 1).padStart(2, '0'), ids: [r.id], description: `The ${r.label} region was supplied manually for this example. The relationship model uses this part of the image to understand the scene.`}));
@@ -245,8 +274,12 @@ function matchesJob(job, query, filter) {
 }
 function applyFilters() {
   let visible = 0;
+  const currentFilter = el('job-filter').value;
+  document.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.classList.toggle('is-selected', btn.dataset.filter === currentFilter);
+  });
   for (const {card, job} of cards.values()) {
-    card.hidden = !matchesJob(job, el('job-search').value, el('job-filter').value);
+    card.hidden = !matchesJob(job, el('job-search').value, currentFilter);
     if (!card.hidden) visible++;
   }
   el('filter-count').textContent = cards.size ? `${visible} of ${cards.size} analyses` : '';
@@ -254,11 +287,28 @@ function applyFilters() {
 }
 el('job-search').addEventListener('input', applyFilters);
 el('job-filter').addEventListener('change', applyFilters);
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    el('job-filter').value = chip.dataset.filter;
+    applyFilters();
+  });
+});
 
 function applyJobs(jobs) {
   online = true;
   const wasActive = activeJob;
   activeJob = jobs.some(j => ['processing', 'cancelling'].includes(j.status));
+  const readyCount = jobs.filter(j => j.status === 'completed').length;
+  const activeCount = jobs.filter(j => ['processing', 'cancelling'].includes(j.status)).length;
+  if (el('nav-job-count')) el('nav-job-count').textContent = String(jobs.length);
+  if (el('kpi-total')) el('kpi-total').textContent = String(jobs.length);
+  if (el('kpi-ready')) el('kpi-ready').textContent = String(readyCount);
+  if (el('kpi-active')) el('kpi-active').textContent = String(activeCount);
+  if (el('nav-live-dot')) {
+    el('nav-live-dot').classList.add('online');
+    const txt = el('nav-live-dot').querySelector('span');
+    if (txt) txt.textContent = activeJob ? 'Running' : 'Live SSE';
+  }
   el('connection').textContent = activeJob ? 'Analysis in progress' : (eventSource && eventSource.readyState === 1 ? 'Live workspace connected' : 'Local workspace connected');
   el('connection').className = 'connection online';
   // Keep unchanged cards mounted so updates preserve annotation inputs and review controls.
@@ -286,8 +336,10 @@ function applyJobs(jobs) {
     el('jobs').replaceChildren();
     const blank = node('div', '', 'empty-state');
     blank.dataset.ready = 'true';
-    const link = node('a', 'Start your first analysis ↗'); link.href = '#analyze';
-    blank.append(node('strong', 'Your next discovery starts here.'), node('span', 'Upload a recording and your findings will appear in this space.'), document.createElement('br'), link);
+    const link = node('a', 'Start your first analysis ↗');
+    link.href = '#analyze';
+    link.dataset.go = 'analyze';
+    blank.append(node('strong', 'Your next discovery starts here.'), node('span', 'Upload a recording in Analyze Studio and your findings will appear here.'), document.createElement('br'), link);
     el('jobs').append(blank);
   }
   applyFilters();
@@ -310,6 +362,7 @@ async function refresh() {
     online = false;
     el('connection').textContent = 'Disconnected · reconnecting automatically';
     el('connection').className = 'connection error';
+    if (el('nav-live-dot')) el('nav-live-dot').classList.remove('online');
     updateStart();
   } finally {refreshing = false;}
 }
@@ -406,8 +459,8 @@ el('upload').addEventListener('submit', event => {
       if (request.status !== 202) throw Error(result.error || 'Upload failed. Please try again.');
       activeJob = true;
       setUploadStep(3);
-      message('Your analysis has started. Follow its progress in your workspace below.');
-      el('history').scrollIntoView({behavior: 'auto', block: 'start'});
+      message('Your analysis has started. Opening your Workspace dashboard…');
+      navigateTo('history');
     } catch (error) {message(error.message, true);}
   };
   request.onerror = () => message('The connection was interrupted. Check your workspace before retrying; the server may have received the upload.', true);
@@ -420,70 +473,85 @@ el('upload').addEventListener('submit', event => {
   request.send(file);
 });
 
-function initMotionStudio() {
-  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const revealNodes = document.querySelectorAll('[data-reveal]');
-  if (!reducedMotion && 'IntersectionObserver' in window && revealNodes.length) {
-    document.documentElement.classList.add('js-ready');
-    const io = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('revealed');
-          io.unobserve(entry.target);
-        }
-      }
-    }, {threshold: 0.08, rootMargin: '0px 0px -30px 0px'});
-    revealNodes.forEach(n => io.observe(n));
-  } else {
-    revealNodes.forEach(n => n.classList.add('revealed'));
+function initRouterAndTheme() {
+  document.addEventListener('click', event => {
+    const link = event.target.closest('[data-nav], [data-go]');
+    if (!link) return;
+    const route = link.dataset.nav || link.dataset.go;
+    if (route) {
+      event.preventDefault();
+      navigateTo(route);
+    }
+  });
+  const syncFromHash = () => {
+    const raw = (window.location.hash || '').replace(/^#/, '');
+    navigateTo(raw || 'overview', false);
+  };
+  window.addEventListener('hashchange', syncFromHash);
+  syncFromHash();
+
+  const applyTheme = mode => {
+    const isLight = mode === 'light';
+    if (isLight) document.documentElement.setAttribute('data-theme', 'light');
+    else document.documentElement.removeAttribute('data-theme');
+    const toggle = el('theme-toggle');
+    if (toggle) {
+      toggle.setAttribute('aria-pressed', String(isLight));
+      toggle.textContent = isLight ? '☾ Dark' : '☀ Light';
+    }
+  };
+  try {
+    applyTheme(localStorage.getItem('fieldnote_theme') || 'dark');
+  } catch {
+    applyTheme('dark');
+  }
+  const toggleBtn = el('theme-toggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+      try {localStorage.setItem('fieldnote_theme', next);} catch {}
+    });
   }
 
-  let scrollScheduled = false;
-  const updateScroll = () => {
-    scrollScheduled = false;
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    const ratio = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-    document.documentElement.style.setProperty('--scroll-progress', ratio.toFixed(4));
-  };
-  window.addEventListener('scroll', () => {
-    if (!scrollScheduled) {
-      scrollScheduled = true;
-      requestAnimationFrame(updateScroll);
-    }
-  }, {passive: true});
-  updateScroll();
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.dataset.copy;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied ✓';
+        setTimeout(() => {btn.textContent = 'Copy';}, 1800);
+      } catch {
+        btn.textContent = 'Select manually';
+        setTimeout(() => {btn.textContent = 'Copy';}, 1800);
+      }
+    });
+  });
 
-  if (reducedMotion) return;
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const heroCard = el('hero-visual');
-  if (heroCard) {
+  if (heroCard && !reducedMotion) {
     heroCard.addEventListener('mousemove', e => {
       const rect = heroCard.getBoundingClientRect();
       const px = (e.clientX - rect.left) / rect.width - 0.5;
       const py = (e.clientY - rect.top) / rect.height - 0.5;
-      heroCard.style.setProperty('--rx', `${(-py * 6).toFixed(2)}deg`);
-      heroCard.style.setProperty('--ry', `${(px * 7).toFixed(2)}deg`);
+      heroCard.style.setProperty('--rx', `${(-py * 5).toFixed(2)}deg`);
+      heroCard.style.setProperty('--ry', `${(px * 6).toFixed(2)}deg`);
     });
     heroCard.addEventListener('mouseleave', () => {
       heroCard.style.setProperty('--rx', '0deg');
-      heroCard.style.setProperty('--ry', '-2deg');
+      heroCard.style.setProperty('--ry', '-1.5deg');
     });
   }
-  document.querySelectorAll('.feature-card').forEach(card => {
-    card.addEventListener('mousemove', e => {
-      const rect = card.getBoundingClientRect();
-      card.style.setProperty('--mx', `${(e.clientX - rect.left).toFixed(0)}px`);
-      card.style.setProperty('--my', `${(e.clientY - rect.top).toFixed(0)}px`);
-    });
-  });
 }
 
+initRouterAndTheme();
 loadDemo();
 loadSystemStatus();
 updateModeUI();
 updateStart();
 refresh();
 connectEvents();
-initMotionStudio();
 setInterval(() => {
   if (!eventSource || eventSource.readyState === 2) {
     refresh();

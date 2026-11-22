@@ -4,92 +4,164 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Fieldnote turns images and recordings into observations you can explore. See the moment. Understand the connection. Review the evidence.">
-  <meta name="theme-color" content="#090d0b">
+  <meta name="theme-color" content="#0a0f0d">
   <title>Fieldnote — A clearer picture.</title>
   <link rel="stylesheet" href="/assets/workspace.css">
   <script src="/assets/workspace.js" defer></script>
 </head>
 <body>
-  <div id="scroll-progress" class="scroll-progress" aria-hidden="true"></div>
   <div class="ambient-bg" aria-hidden="true"></div>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="header">
-    <a class="brand" href="#" aria-label="Fieldnote home">
-      <span class="brandmark" aria-hidden="true">⌘</span> fieldnote<span class="brand-dot">.</span>
-    </a>
-    <nav aria-label="Main navigation">
-      <a href="#features">Capabilities</a>
-      <a href="#demo">Live example</a>
-      <a href="#history">Workspace</a>
-      <a class="button small dark" href="#analyze">Analyze footage <span aria-hidden="true">↗</span></a>
-    </nav>
-  </header>
-
-  <main id="main">
-    <section class="hero wrap" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="eyebrow"><span class="dot" aria-hidden="true"></span> VISUAL INTELLIGENCE STUDIO · LOCAL-FIRST</p>
-        <h1 id="hero-title">More than watching.<br><span>See the connections.</span></h1>
-        <p class="intro">Your footage has a story. Track people, objects, spatial zones, and interactions across time—with verifiable evidence always one click away.</p>
-        <div class="actions">
-          <a class="button dark" href="#analyze">Explore your footage <span aria-hidden="true">↗</span></a>
-          <a class="text-link" href="#demo"><span class="play-icon" aria-hidden="true">▷</span> Inspect saved inference</a>
-        </div>
-        <div class="hero-promises">
-          <span>✓ Processed on your hardware</span>
-          <span>✓ Interactive evidence timeline</span>
-          <span>✓ Human-in-the-loop review</span>
-        </div>
-      </div>
-
-      <a class="hero-visual" id="hero-visual" href="#demo" aria-label="Explore the real person riding horse example">
-        <div class="visual-top">
-          <span>OPTICAL VIEWFINDER · 001</span>
-          <span>RELATEANYTHING ↗</span>
-        </div>
-        <div class="hero-frame-wrap">
-          <img src="/assets/demo-horse.jpg" alt="Rider on a white horse: explore the relationship in the example below" width="1280" height="907" fetchpriority="high">
-          <div class="scan-beam" aria-hidden="true"></div>
-          <i class="reticle tl" aria-hidden="true"></i>
-          <i class="reticle tr" aria-hidden="true"></i>
-          <i class="reticle bl" aria-hidden="true"></i>
-          <i class="reticle br" aria-hidden="true"></i>
-        </div>
-        <div class="hero-observation">
-          <span class="observation-icon" aria-hidden="true">↗</span>
-          <div>
-            <small>SAVED SCENE GRAPH OBSERVATION</small>
-            <strong>Person <em>riding</em> horse</strong>
-            <span>Manual regions · verified local CPU inference</span>
-          </div>
-        </div>
-        <div class="visual-bottom">
-          <span>Inspect scene graph</span>
-          <span>Explore evidence →</span>
-        </div>
+  <header class="app-header">
+    <div class="header-inner wrap">
+      <a class="brand" href="#overview" data-nav="overview" aria-label="Fieldnote home">
+        <span class="brandmark" aria-hidden="true">⌘</span> fieldnote<span class="brand-dot">.</span>
       </a>
-    </section>
 
-    <div class="value-strip">
-      <div class="wrap">
-        <span>01 · Bring your recording</span>
-        <span aria-hidden="true">→</span>
-        <span>02 · Track &amp; link interactions</span>
-        <span aria-hidden="true">→</span>
-        <span>03 · Draw zones &amp; replay rules</span>
-        <span aria-hidden="true">→</span>
-        <span>04 · Verify &amp; benchmark findings</span>
+      <nav class="app-nav" aria-label="Workspace pages">
+        <a href="#overview" data-nav="overview" class="is-active" aria-current="page">Overview</a>
+        <a href="#demo" data-nav="demo">Interactive Demo</a>
+        <a href="#analyze" data-nav="analyze">Analyze Studio</a>
+        <a href="#history" data-nav="history">Workspace <span id="nav-job-count" class="nav-badge">0</span></a>
+        <a href="#questions" data-nav="questions">Docs &amp; FAQ</a>
+      </nav>
+
+      <div class="header-actions">
+        <span id="nav-live-dot" class="nav-live" title="Local workspace status"><i aria-hidden="true"></i><span>Local</span></span>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-pressed="false" title="Switch color theme">☀ Light</button>
+        <a class="button small dark" href="#analyze" data-go="analyze">+ New Analysis</a>
       </div>
     </div>
+  </header>
 
-    <section id="demo" class="wrap demo-section" data-reveal aria-labelledby="demo-heading">
-      <div class="section-top">
-        <div>
-          <span class="eyebrow">01 / SEE THE CONNECTION</span>
-          <h2 id="demo-heading">One frame. Full relational context.</h2>
+  <main id="main" class="app-main">
+    <!-- PAGE 1: OVERVIEW -->
+    <section id="overview" class="page-view is-active wrap" data-page="overview" aria-labelledby="hero-title">
+      <div class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> VISUAL INTELLIGENCE WORKSPACE · LOCAL-FIRST</p>
+          <h1 id="hero-title">More than watching.<br><span>See the connections.</span></h1>
+          <p class="intro">Upload footage, track people and vehicles across frames, draw camera zones, replay behavioral rules in seconds, and benchmark event predictions on your own machine.</p>
+          <div class="actions">
+            <a class="button dark" href="#analyze" data-go="analyze">Open Analyze Studio <span aria-hidden="true">↗</span></a>
+            <a class="button-ghost" href="#demo" data-go="demo"><span class="play-icon" aria-hidden="true">▷</span> Launch Demo Explorer</a>
+          </div>
+          <div class="hero-promises">
+            <span>✓ 100% local SQLite &amp; file storage</span>
+            <span>✓ Warm-worker weight caching</span>
+            <span>✓ Keyboard-driven review studio</span>
+          </div>
         </div>
-        <span class="sample-badge"><span class="dot" aria-hidden="true"></span> Recorded model example</span>
+
+        <a class="hero-visual" id="hero-visual" href="#demo" data-go="demo" aria-label="Open Interactive Demo Explorer">
+          <div class="window-chrome">
+            <span class="win-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="win-title">fieldnote · scene-graph-explorer</span>
+            <span class="win-tag">RELATEANYTHING</span>
+          </div>
+          <div class="hero-frame-wrap">
+            <img src="/assets/demo-horse.jpg" alt="Rider on a white horse: open the interactive scene-graph demo" width="1280" height="907" fetchpriority="high">
+            <div class="scan-beam" aria-hidden="true"></div>
+            <i class="reticle tl" aria-hidden="true"></i>
+            <i class="reticle tr" aria-hidden="true"></i>
+            <i class="reticle bl" aria-hidden="true"></i>
+            <i class="reticle br" aria-hidden="true"></i>
+          </div>
+          <div class="hero-observation">
+            <span class="observation-icon" aria-hidden="true">↗</span>
+            <div>
+              <small>SAVED SCENE GRAPH · IMAGE 001</small>
+              <strong>Person <em>riding</em> horse</strong>
+              <span>Click to inspect bounding boxes &amp; relational graph</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="quick-grid" aria-label="Platform sections">
+        <a class="quick-tile" href="#demo" data-go="demo">
+          <span class="quick-label">SCENE EXPLORER</span>
+          <strong>Saved Model Demo</strong>
+          <small>Inspect real CPU RelateAnything boxes &amp; scores →</small>
+        </a>
+        <a class="quick-tile" href="#analyze" data-go="analyze">
+          <span class="quick-label">PIPELINE STUDIO</span>
+          <strong>Analyze Footage</strong>
+          <small>MP4, MOV, AVI, WebM, JPG or PNG up to 512 MB →</small>
+        </a>
+        <a class="quick-tile" href="#history" data-go="history">
+          <span class="quick-label">LIVE OPERATIONS</span>
+          <strong>Workspace &amp; Jobs</strong>
+          <small>Real-time SSE progress, evaluation &amp; logs →</small>
+        </a>
+        <a class="quick-tile" href="#history" data-go="history">
+          <span class="quick-label">RUNTIME STATUS</span>
+          <strong id="overview-runtime">Checking runtime…</strong>
+          <small>Inspect installed extras &amp; disk storage →</small>
+        </a>
+      </div>
+
+      <div id="features" class="bento-section">
+        <div class="section-top">
+          <div>
+            <p class="eyebrow">PLATFORM CAPABILITIES</p>
+            <h2>Built as a complete inspection workflow.</h2>
+          </div>
+          <a class="text-link" href="#questions" data-go="questions">CLI &amp; Docker guide ↗</a>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-art objects-art" aria-hidden="true">
+              <svg class="feature-curve" viewBox="0 0 300 150" preserveAspectRatio="none">
+                <path d="M90 74 Q 150 24 210 74"></path>
+              </svg>
+              <span class="object-chip">person</span>
+              <span class="object-chip">backpack</span>
+              <span class="connection-label">holding ↗</span>
+            </div>
+            <span class="eyebrow">01 / SCENE GRAPHS</span>
+            <h3>Connect objects with track IDs</h3>
+            <p>YOLO detection paired with IoU or Kalman tracking and RelateAnything predicates across sampled frames.</p>
+            <a href="#demo" data-go="demo">Open Interactive Demo →</a>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-art timeline-art" aria-hidden="true">
+              <span>00:00</span><i></i><b>Review moment</b><i></i><span>00:30</span>
+            </div>
+            <span class="eyebrow">02 / ZONES &amp; REPLAY</span>
+            <h3>Draw zones &amp; replay fast</h3>
+            <p>Sketch camera zones directly on evidence frames inside Review and replay temporal rules without re-running models.</p>
+            <a href="#analyze" data-go="analyze">Open Analyze Studio →</a>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-art review-art" aria-hidden="true">
+              <span>Observation verdict</span><b>✓ Correct</b><span>Uncertain</span>
+            </div>
+            <span class="eyebrow">03 / EVALUATION</span>
+            <h3>Verdicts &amp; precision/recall</h3>
+            <p>Confirm or reject alerts using keyboard shortcuts, annotate ground truth, and track F1 scores per job.</p>
+            <a href="#history" data-go="history">Open Workspace →</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 2: INTERACTIVE DEMO EXPLORER -->
+    <section id="demo" class="page-view wrap" data-page="demo" aria-labelledby="demo-heading">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> SCENE GRAPH EXPLORER</p>
+          <h2 id="demo-heading">One frame. Full relational context.</h2>
+          <p class="muted">Inspect real RelateAnything CPU inference on manually marked regions. Select any finding on the right to isolate overlays.</p>
+        </div>
+        <div class="page-actions">
+          <a class="button-ghost" href="/assets/demo-result.json" download="fieldnote-example.json">Download Result JSON ↗</a>
+          <a class="button small dark" href="#analyze" data-go="analyze">Try Your Footage ↗</a>
+        </div>
       </div>
 
       <div class="demo-shell">
@@ -110,129 +182,63 @@
             <span class="image-tag">A moment, connected.</span>
           </div>
           <div class="visual-bottom">
-            <span><span class="dot" aria-hidden="true"></span> Real pretrained inference · saved result</span>
+            <span><span class="dot" aria-hidden="true"></span> Saved single-image inference · no live model download</span>
             <label class="toggle"><input id="show-boxes" type="checkbox" checked> Show region overlays</label>
           </div>
         </div>
 
         <aside class="demo-notes">
           <div>
-            <p class="eyebrow">WHAT’S IN THE FRAME</p>
-            <h3>See the relationship.</h3>
-            <p class="muted">Select an observation below to isolate its bounding boxes and relational link.</p>
+            <p class="eyebrow">GRAPH INSPECTOR</p>
+            <h3>Detected entities &amp; edge</h3>
+            <p class="muted">Toggle an item to isolate its bounding box and animated predicate arc.</p>
           </div>
+
           <div id="demo-findings" class="findings" aria-label="Example findings">
             <p role="status">Loading saved observations…</p>
           </div>
+
+          <div class="score-widget" aria-label="Relationship model score">
+            <div class="score-head">
+              <span>Model edge score</span>
+              <strong id="demo-score-pct">—</strong>
+            </div>
+            <div class="score-meter"><div id="demo-score-bar" class="score-fill"></div></div>
+          </div>
+
           <div class="demo-explanation">
             <span class="note-icon" aria-hidden="true">↳</span>
             <p id="demo-description" aria-live="polite">Two manually marked regions, connected by a pretrained relationship model.</p>
           </div>
+
           <details class="demo-details">
-            <summary>How this example was made</summary>
-            <p>Real RelateAnything CPU inference on a single image, using manually supplied person and horse regions. This is a saved example, not a live analysis or an accuracy benchmark.</p>
+            <summary>Provenance &amp; calibration notes</summary>
+            <p>Real RelateAnything CPU inference on a single image, using manually supplied person and horse regions. This is a saved example, not an accuracy benchmark.</p>
             <p id="demo-score"></p>
-            <a href="/assets/demo-result.json" download="fieldnote-example.json">Download original result JSON ↗</a>
           </details>
         </aside>
       </div>
-      <p class="credit">Photograph: Subhrajyoti07 · <a href="https://commons.wikimedia.org/wiki/File:A_horse_rider_in_Maidan_,_Kolkata.jpg">Maidan, Kolkata</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> · Displayed with interactive region &amp; graph overlays.</p>
+      <p class="credit">Photograph: Subhrajyoti07 · <a href="https://commons.wikimedia.org/wiki/File:A_horse_rider_in_Maidan_,_Kolkata.jpg">Maidan, Kolkata</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p>
     </section>
 
-    <section id="features" class="features-section wrap" data-reveal aria-labelledby="features-title">
-      <div class="section-top">
+    <!-- PAGE 3: ANALYZE STUDIO -->
+    <section id="analyze" class="page-view wrap" data-page="analyze" aria-labelledby="upload-heading">
+      <div class="page-head">
         <div>
-          <p class="eyebrow">A CLEARER WAY TO LOOK AT VIDEO</p>
-          <h2 id="features-title">Less searching.<br>More understanding.</h2>
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> ANALYZE STUDIO</p>
+          <h2 id="upload-heading">Configure &amp; run local footage analysis.</h2>
+          <p class="muted">Select a video or frame on the left, tune your inference pipeline on the right, and track live execution in your Workspace.</p>
         </div>
-        <p class="section-intro">Go from raw recordings to track-linked interactions, spatial zones, and reproducible metrics.</p>
-      </div>
-
-      <div class="feature-grid">
-        <article class="feature-card">
-          <div class="feature-art objects-art" aria-hidden="true">
-            <svg class="feature-curve" viewBox="0 0 300 150" preserveAspectRatio="none">
-              <path d="M90 74 Q 150 24 210 74"></path>
-            </svg>
-            <span class="object-chip">person</span>
-            <span class="object-chip">backpack</span>
-            <span class="connection-label">holding ↗</span>
-          </div>
-          <span class="eyebrow">PEOPLE &amp; OBJECTS</span>
-          <h3>Understand the scene.</h3>
-          <p>See detected regions, pose posture cues, and predicted relationships connected across persistent track IDs.</p>
-          <a href="#demo">Explore the saved example ↗</a>
-        </article>
-
-        <article class="feature-card">
-          <div class="feature-art timeline-art" aria-hidden="true">
-            <span>00:00</span><i></i><b>Review moment</b><i></i><span>00:30</span>
-          </div>
-          <span class="eyebrow">MOMENTS &amp; ZONES</span>
-          <h3>Replay without re-running models.</h3>
-          <p>Draw custom camera zones directly over evidence frames and replay temporal rules in seconds.</p>
-          <a href="#analyze">Analyze a recording ↗</a>
-        </article>
-
-        <article class="feature-card">
-          <div class="feature-art review-art" aria-hidden="true">
-            <span>Observation verdict</span><b>✓ Correct</b><span>Uncertain</span>
-          </div>
-          <span class="eyebrow">REVIEW &amp; BENCHMARK</span>
-          <h3>Keep the human in control.</h3>
-          <p>Keyboard-driven frame review, server-synced verdicts, annotation studio, and precision/recall evaluation.</p>
-          <a href="#history">Open your workspace ↗</a>
-        </article>
-      </div>
-      <p class="feature-caption">Feature cards illustrate the analytical pipeline. The Kolkata rider showcase above presents recorded model output.</p>
-    </section>
-
-    <section class="how wrap" data-reveal aria-labelledby="how-heading">
-      <div class="how-title">
-        <p class="eyebrow">LESS SCRUBBING. MORE CONTEXT.</p>
-        <h2 id="how-heading">From footage to verifiable clarity.</h2>
-      </div>
-      <ol class="steps">
-        <li>
-          <span>01</span>
-          <h3>Bring a recording</h3>
-          <p>Drop a local MP4, MOV, AVI, MKV, WebM video or still frame. Preview immediately in browser memory.</p>
-        </li>
-        <li>
-          <span>02</span>
-          <h3>Connect the dots</h3>
-          <p>Run YOLO detection, multi-object tracking, pose estimation, and RelateAnything predicates locally.</p>
-        </li>
-        <li>
-          <span>03</span>
-          <h3>See for yourself</h3>
-          <p>Inspect candidate alerts with keyboard shortcuts, draw zones, replay rules, and score ground truth.</p>
-        </li>
-      </ol>
-    </section>
-
-    <section id="analyze" class="analyze-section" data-reveal aria-labelledby="upload-heading">
-      <div class="wrap upload-layout">
-        <div class="upload-copy">
-          <p class="eyebrow">02 / YOUR TURN</p>
-          <h2 id="upload-heading">What’s in <br>your footage?</h2>
-          <p>Give your next recording a sharper, verifiable look.</p>
-          <div class="privacy-note">
-            <span aria-hidden="true">⌂</span>
-            <div>
-              <strong>Processed on this computer</strong>
-              <p>Uploads and results stay inside your local workspace SQLite store and artifact folders until deleted. Model weights cache locally on first use.</p>
-            </div>
-          </div>
+        <div class="upload-steps" aria-label="Upload workflow">
+          <span id="step-1" class="selected">1 · Select media</span>
+          <span id="step-2">2 · Configure pipeline</span>
+          <span id="step-3">3 · Review studio</span>
         </div>
+      </div>
 
-        <form id="upload" class="upload-card">
-          <div class="upload-steps" aria-label="Upload workflow">
-            <span id="step-1" class="selected">1 · Choose a file</span>
-            <span id="step-2">2 · Configure &amp; Analyze</span>
-            <span id="step-3">3 · Review Studio</span>
-          </div>
-
+      <form id="upload" class="studio-workbench">
+        <div class="panel-card workbench-media">
+          <h3>1 · Source Media</h3>
           <label class="dropzone" id="dropzone">
             <span class="upload-icon" aria-hidden="true">↥</span>
             <strong id="file-title">Drop your video or image here</strong>
@@ -249,7 +255,7 @@
           </div>
 
           <fieldset class="presets">
-            <legend>How would you like to start?</legend>
+            <legend>Sample depth preset</legend>
             <label>
               <input type="radio" name="preset" value="30" checked>
               <span><strong>Quick look</strong><small>Up to 30 sampled frames</small></span>
@@ -260,64 +266,86 @@
             </label>
           </fieldset>
 
-          <details class="settings">
-            <summary>Analysis settings <span>Scene analysis · customize stride, profile &amp; device</span></summary>
-            <div class="settings-fields">
-              <label>Look for
-                <select id="mode">
-                  <option value="scene">People, objects &amp; relationships</option>
-                  <option value="plates">Vehicle plates (video only)</option>
-                </select>
-              </label>
-              <label>Maximum sampled frames
-                <input id="limit" type="number" min="1" max="600" value="30" required>
-              </label>
-              <label>Sampling stride
-                <select id="stride">
-                  <option value="auto" selected>Auto-safe for video FPS</option>
-                  <option value="5">Every 5 frames</option>
-                  <option value="15">Every 15 frames</option>
-                  <option value="30">Every 30 frames</option>
-                </select>
-              </label>
-              <label>Event profile
-                <select id="profile">
-                  <option value="default">Default · unattended bag</option>
-                  <option value="behavior">Behavior · dwell &amp; closing</option>
-                  <option value="zones">Saved camera zones</option>
-                </select>
-              </label>
-              <label>Compute device
-                <select id="device">
-                  <option value="cpu">CPU</option>
-                  <option value="auto">Auto (GPU if available)</option>
-                  <option value="cuda">CUDA GPU</option>
-                </select>
-              </label>
+          <div class="privacy-note">
+            <span aria-hidden="true">⌂</span>
+            <div>
+              <strong>Processed locally on this computer</strong>
+              <p>Uploads stay in <code>outputs/workspace/</code> and metadata persists in SQLite until you delete them. Strict magic-byte validation protects every upload.</p>
             </div>
-            <label id="crops-wrap" class="toggle-field" hidden>
-              <input id="vehicle-crops" type="checkbox"> High-resolution vehicle crops (requires detection extra)
-            </label>
-            <p>Auto-safe stride adapts sampling for low-FPS recordings. You can also draw zones and replay reasoning inside any completed review.</p>
-          </details>
+          </div>
+        </div>
 
-          <button id="start" class="button dark" type="submit">Analyze footage <span aria-hidden="true">↗</span></button>
-          <p class="upload-hint">Start with a short clip. Candidate findings are surfaced for human verification.</p>
+        <div class="panel-card workbench-config">
+          <h3>2 · Pipeline Configuration</h3>
+          <div class="settings-fields">
+            <label>Look for
+              <select id="mode">
+                <option value="scene">People, objects &amp; relationships</option>
+                <option value="plates">Vehicle plates (video only)</option>
+              </select>
+            </label>
+            <label>Maximum sampled frames
+              <input id="limit" type="number" min="1" max="600" value="30" required>
+            </label>
+            <label>Sampling stride
+              <select id="stride">
+                <option value="auto" selected>Auto-safe for video FPS</option>
+                <option value="5">Every 5 frames</option>
+                <option value="15">Every 15 frames</option>
+                <option value="30">Every 30 frames</option>
+              </select>
+            </label>
+            <label>Event profile
+              <select id="profile">
+                <option value="default">Default · unattended bag</option>
+                <option value="behavior">Behavior · dwell &amp; closing</option>
+                <option value="zones">Saved camera zones</option>
+              </select>
+            </label>
+            <label>Compute device
+              <select id="device">
+                <option value="cpu">CPU</option>
+                <option value="auto">Auto (GPU if available)</option>
+                <option value="cuda">CUDA GPU</option>
+              </select>
+            </label>
+          </div>
+
+          <label id="crops-wrap" class="toggle-field" hidden>
+            <input id="vehicle-crops" type="checkbox"> High-resolution vehicle crops (requires detection extra)
+          </label>
+
+          <p class="config-note">Auto-safe stride tunes frame spacing automatically for low-FPS clips. After processing completes, you can adjust zones and replay reasoning inside Review without re-running detection or VLM inference.</p>
+
+          <button id="start" class="button dark submit-full" type="submit">Analyze footage <span aria-hidden="true">↗</span></button>
+          <p class="upload-hint">Candidate alerts always require human inspection in Review.</p>
           <progress id="progress" max="100" value="0" aria-label="Upload progress" hidden></progress>
           <p id="message" role="status" aria-live="polite"></p>
-        </form>
-      </div>
+        </div>
+      </form>
     </section>
 
-    <section id="history" class="wrap history-section" data-reveal aria-labelledby="history-heading">
-      <div class="section-top">
+    <!-- PAGE 4: WORKSPACE OPERATIONS DASHBOARD -->
+    <section id="history" class="page-view wrap" data-page="history" aria-labelledby="history-heading">
+      <div class="page-head">
         <div>
-          <span class="eyebrow">03 / PICK UP WHERE YOU LEFT OFF</span>
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> OPERATIONS WORKSPACE</p>
           <h2 id="history-heading">Your workspace.</h2>
+          <p class="muted">Real-time job telemetry over SSE, SQLite persistence, processing logs, and evaluation runs.</p>
         </div>
-        <span id="connection" class="connection" role="status">Connecting…</span>
+        <div class="page-actions">
+          <span id="connection" class="connection" role="status">Connecting…</span>
+          <a class="button small dark" href="#analyze" data-go="analyze">+ New Analysis</a>
+        </div>
       </div>
-      <p class="muted">Live telemetry, active runs, saved evaluations, and instant review studios in one place.</p>
+
+      <div class="kpi-grid" aria-label="Workspace telemetry">
+        <div class="kpi-card"><span>TOTAL ANALYSES</span><b id="kpi-total">0</b></div>
+        <div class="kpi-card"><span>READY TO REVIEW</span><b id="kpi-ready">0</b></div>
+        <div class="kpi-card"><span>ACTIVE JOBS</span><b id="kpi-active">0</b></div>
+        <div class="kpi-card"><span>WORKSPACE STORAGE</span><b id="kpi-storage">0.0 MB</b></div>
+      </div>
+
       <div id="system-status" class="system-strip" aria-live="polite">Checking local runtime…</div>
       <p id="job-announcement" class="sr-only" role="status" aria-live="polite"></p>
 
@@ -325,7 +353,7 @@
         <label class="search-label">Find an analysis
           <input id="job-search" type="search" placeholder="Search by type, date or analysis ID" autocomplete="off">
         </label>
-        <label>Show
+        <label>Status filter
           <select id="job-filter">
             <option value="all">All analyses</option>
             <option value="completed">Ready to review</option>
@@ -336,61 +364,99 @@
         <p id="filter-count" role="status" aria-live="polite"></p>
       </div>
 
+      <div class="filter-chips" role="group" aria-label="Quick status filters">
+        <button class="filter-chip is-selected" type="button" data-filter="all">All</button>
+        <button class="filter-chip" type="button" data-filter="completed">Completed</button>
+        <button class="filter-chip" type="button" data-filter="active">Processing</button>
+        <button class="filter-chip" type="button" data-filter="attention">Attention</button>
+      </div>
+
       <p id="no-matches" class="empty-state" hidden>No analyses match. Try another search or select All analyses.</p>
       <div id="jobs"><p class="empty-state">Connecting to your local workspace…</p></div>
     </section>
 
-    <section id="questions" class="faq wrap" data-reveal aria-labelledby="faq-title">
-      <div>
-        <p class="eyebrow">BEFORE YOU START</p>
-        <h2 id="faq-title">Good questions.<br>Clear answers.</h2>
-        <p>Know what to expect<br>from your first analysis.</p>
+    <!-- PAGE 5: DOCS & FAQ -->
+    <section id="questions" class="page-view wrap" data-page="questions" aria-labelledby="faq-title">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow"><span class="dot" aria-hidden="true"></span> DOCUMENTATION &amp; REFERENCE</p>
+          <h2 id="faq-title">CLI tools, containers &amp; clear answers.</h2>
+          <p class="muted">Launch live RTSP streams, run Kalman tracking or calibration benchmarks, and understand honest system limits.</p>
+        </div>
+        <a class="button small dark" href="#analyze" data-go="analyze">Open Analyze Studio ↗</a>
       </div>
-      <div class="faq-list">
-        <details>
-          <summary>Do I need to connect a camera?</summary>
-          <p>No. Start by uploading a video or image. Live camera and RTSP streams are available through the project's `camera-video` CLI tool; this website focuses on uploaded recordings.</p>
-        </details>
-        <details>
-          <summary>Where does my footage go?</summary>
-          <p>This version processes footage on your computer. Uploads and results stay in the local workspace until you remove them from disk. It does not publish recordings or create a public share link.</p>
-        </details>
-        <details>
-          <summary>Does it analyze the entire recording?</summary>
-          <p>Videos are sampled at your chosen stride, up to your selected sample limit. Check Coverage &amp; processing details for each run. A completed analysis does not mean every frame or the entire video was analyzed.</p>
-        </details>
-        <details>
-          <summary>How reliable are the findings?</summary>
-          <p>Findings are model predictions and rule-based event candidates, not verified facts. Review the source evidence before acting. Real-world accuracy has not yet been measured on external footage.</p>
-        </details>
-        <details>
-          <summary>How long will it take?</summary>
-          <p>It depends on your hardware, the footage, and the sample limit. When `--warm-worker` is active, loaded weights stay warm across consecutive runs. Start with Quick look; you can stop a running job anytime.</p>
-        </details>
-        <details>
-          <summary>What can I export?</summary>
-          <p>Download structured JSONL session results from the workspace. Inside the review studio, verdicts save directly to SQLite, Export JSON downloads full session output, and reviewed annotations can be evaluated live in browser.</p>
-        </details>
-      </div>
-    </section>
 
-    <section class="closing wrap" data-reveal>
-      <h2>Your next recording.<br>A sharper perspective.</h2>
-      <a class="button dark" href="#analyze">Explore your footage <span aria-hidden="true">↗</span></a>
+      <div class="docs-layout">
+        <div class="docs-cli">
+          <div class="panel-card">
+            <h3>Command Line &amp; Docker Quickstart</h3>
+            <p class="muted">Copy and run commands from the repository root (`Work-mode/`).</p>
+
+            <div class="cmd-card">
+              <div class="cmd-head"><span>Local Workspace Server</span><button type="button" data-copy=".venv\Scripts\camera-workspace.exe --port 8780 --warm-worker --strict-uploads">Copy</button></div>
+              <code>.venv\Scripts\camera-workspace.exe --port 8780 --warm-worker --strict-uploads</code>
+            </div>
+
+            <div class="cmd-card">
+              <div class="cmd-head"><span>Kalman Video Pipeline</span><button type="button" data-copy=".venv\Scripts\camera-video.exe --video clip.mp4 --tracker kalman --stride 5 --output outputs\clip.jsonl">Copy</button></div>
+              <code>.venv\Scripts\camera-video.exe --video clip.mp4 --tracker kalman --stride 5 --output outputs\clip.jsonl</code>
+            </div>
+
+            <div class="cmd-card">
+              <div class="cmd-head"><span>Calibration Benchmark</span><button type="button" data-copy=".venv\Scripts\camera-benchmark.exe outputs\demo\session.jsonl --truth outputs\demo\truth.json --output-dir outputs\bench">Copy</button></div>
+              <code>.venv\Scripts\camera-benchmark.exe outputs\demo\session.jsonl --truth outputs\demo\truth.json --output-dir outputs\bench</code>
+            </div>
+
+            <div class="cmd-card">
+              <div class="cmd-head"><span>Docker Compose (CPU / GPU)</span><button type="button" data-copy="docker compose up --build">Copy</button></div>
+              <code>docker compose up --build</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card faq-list">
+          <h3>Frequently Asked Questions</h3>
+          <details open>
+            <summary>Do I need to connect a camera?</summary>
+            <p>No. Start by uploading a video or image in Analyze Studio. Live camera indexes and authenticated RTSP/HTTP streams are supported via the `camera-video` CLI (`--live-buffer`, `--reconnect-attempts`, `--stream-credentials-env`).</p>
+          </details>
+          <details>
+            <summary>Where does my footage go?</summary>
+            <p>All uploads and results stay on your machine inside the local workspace directory and SQLite database (`fieldnote.db`) until you delete them. Nothing is published or uploaded externally.</p>
+          </details>
+          <details>
+            <summary>Does it analyze the entire recording?</summary>
+            <p>Videos are sampled at your selected stride up to the frame limit. Always check Coverage &amp; processing details on the card—completing a 30-frame quick look does not imply full-clip coverage.</p>
+          </details>
+          <details>
+            <summary>How reliable are the findings?</summary>
+            <p>Findings are pretrained model predictions and rule-based temporal event candidates, not verified facts. Review the source frame/video and verify annotations with `camera-benchmark` before drawing conclusions.</p>
+          </details>
+          <details>
+            <summary>How fast does analysis run?</summary>
+            <p>Runtime depends on CPU/CUDA hardware and sample limit. With `--warm-worker` enabled, loaded weights remain cached across consecutive jobs so startup overhead only happens once.</p>
+          </details>
+          <details>
+            <summary>What can I export?</summary>
+            <p>Download raw JSONL session outputs directly from Workspace. Inside Review, save verdicts to SQLite, export full session JSON, draw zones &amp; replay rules, and evaluate ground-truth metrics live.</p>
+          </details>
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer class="wrap footer">
+  <footer class="wrap app-footer">
     <div>
-      <a class="brand" href="#">fieldnote<span class="brand-dot">.</span></a>
-      <p>See the moment. Understand the connection.</p>
+      <a class="brand" href="#overview" data-nav="overview">fieldnote<span class="brand-dot">.</span></a>
+      <p>Visual intelligence, made verifiable.</p>
     </div>
     <div>
       <span class="footer-label">BUILT WITH RELATEANYTHING</span>
-      <p>Based on RelateAnything by Maëlic Neau. <br><a href="https://github.com/Maelic/RelateAnything">Explore the research ↗</a></p>
-      <small>Local research workspace · Findings require human review.</small>
+      <p>Based on RelateAnything by Maëlic Neau · <a href="https://github.com/Maelic/RelateAnything">Explore upstream research ↗</a></p>
+      <small>Local research workspace · Findings require human inspection.</small>
     </div>
   </footer>
-  <noscript><p class="noscript">Enable JavaScript to explore the example and upload footage.</p></noscript>
+
+  <noscript><p class="noscript">Enable JavaScript to navigate tabs, inspect the interactive example, and manage workspace jobs.</p></noscript>
 </body>
 </html>
