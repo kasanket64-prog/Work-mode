@@ -89,7 +89,7 @@ class ReasoningSettings:
 def load_reasoning(path: Path | None) -> ReasoningSettings:
     if path is None:
         return ReasoningSettings()
-    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    data = tomllib.loads(path.read_text(encoding="utf-8-sig"))
     if set(data) - {f.name for f in fields(ReasoningSettings)}:
         raise ValueError("unknown reasoning configuration field")
     return ReasoningSettings(**data)
@@ -333,6 +333,7 @@ class Reasoner:
                         "event_id": f"event-{self.event_count}",
                         "type": "possible_unattended_bag",
                         "timestamp_seconds": timestamp,
+                        "started_seconds": state["away_since"],
                         "object_track_id": key,
                         "previous_person_track_id": state["owner"],
                         "observed_unattended_seconds": timestamp - state["away_since"],

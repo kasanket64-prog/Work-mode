@@ -23,6 +23,8 @@ class FrameSource:
     def __init__(self, source: str | int, stride: int = 1, *, network=False):
         if type(stride) is not int or stride < 1:
             raise ValueError("frame stride must be a positive integer")
+        if type(source) is bool or not isinstance(source, (str, int)):
+            raise ValueError("video source must be a file path, URL, or nonnegative camera index")
         if isinstance(source, int) and source < 0:
             raise ValueError("camera index must be nonnegative")
         if network:

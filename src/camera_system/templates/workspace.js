@@ -13,7 +13,8 @@ const statusNames = {processing: 'Analyzing', cancelling: 'Stopping', completed:
 function uploadError(file, mode) {
   if (!file || !file.size) return 'Choose a video or image that is not empty.';
   if (file.size > 512 * 1024 * 1024) return 'This file is too large. Choose a file up to 512 MB.';
-  const extension = file.name.split('.').pop().toLowerCase();
+  const dot = file.name.lastIndexOf('.');
+  const extension = dot > 0 ? file.name.slice(dot + 1).toLowerCase() : '';
   if (!['mp4', 'avi', 'mov', 'mkv', 'webm', 'jpg', 'jpeg', 'png'].includes(extension)) return 'Choose an MP4, MOV, AVI, MKV, WebM, JPG or PNG file.';
   if (mode === 'plates' && ['jpg', 'jpeg', 'png'].includes(extension)) return 'Plate reading needs a video. Choose a video or switch to scene analysis.';
   return '';
@@ -262,7 +263,9 @@ el('upload').addEventListener('submit', event => {
   const request = new XMLHttpRequest();
   request.open('POST', '/api/jobs');
   request.setRequestHeader('Content-Type', 'application/octet-stream');
-  request.setRequestHeader('X-File-Extension', '.' + file.name.split('.').pop().toLowerCase());
+  const dot = file.name.lastIndexOf('.');
+  const ext = dot > 0 ? file.name.slice(dot).toLowerCase() : '';
+  request.setRequestHeader('X-File-Extension', ext);
   request.setRequestHeader('X-Analysis-Mode', el('mode').value);
   request.setRequestHeader('X-Frame-Limit', el('limit').value);
   request.upload.onprogress = e => {if (e.lengthComputable) {el('progress').value = e.loaded / e.total * 100; if (e.loaded === e.total) message('Upload received. Starting your analysis…');}};

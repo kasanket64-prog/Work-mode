@@ -23,6 +23,9 @@ camera-vehicle = "camera_system.vehicles:main"
 camera-review = "camera_system.review:main"
 camera-video = "camera_system.video_cli:main"
 camera-relations = "camera_system.cli:main"
+camera-replay = "camera_system.replay:main"
+camera-plates = "camera_system.plates:main"
+camera-demo = "camera_system.demo:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -43,7 +43,7 @@ class Settings:
 
 
 def load_settings(path: Path) -> Settings:
-    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    data = tomllib.loads(path.read_text(encoding="utf-8-sig"))
     unknown = set(data) - {f.name for f in fields(Settings)}
     if unknown:
         raise ValueError(f"unknown configuration fields: {sorted(unknown)}")

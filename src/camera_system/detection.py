@@ -33,7 +33,7 @@ class DetectorSettings:
 
 
 def load_detector_settings(path: Path) -> DetectorSettings:
-    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    data = tomllib.loads(path.read_text(encoding="utf-8-sig"))
     if set(data) - {f.name for f in fields(DetectorSettings)}:
         raise ValueError("unknown detector configuration fields")
     return DetectorSettings(**data)
@@ -65,7 +65,7 @@ def decode_detections(boxes, scores, classes, names, size, settings):
 
 
 class YoloDetector:
-    def __init__(self, settings: DetectorSettings, device: str):
+    def __init__(self, settings: DetectorSettings, device: str, half: bool = False):
         try:
             import torch
             from ultralytics import YOLO
@@ -79,6 +79,7 @@ class YoloDetector:
         )
         if self.device == "cuda" and not torch.cuda.is_available():
             raise RuntimeError("CUDA requested but unavailable; use --device cpu")
+        self.half = bool(half)
         self.model = YOLO(settings.model, task="detect")
         path = Path(self.model.ckpt_path)
         self.weights_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -91,6 +92,7 @@ class YoloDetector:
             iou=self.settings.iou,
             imgsz=self.settings.image_size,
             max_det=self.settings.max_detections,
+            half=self.half and self.device == "cuda",
             verbose=False,
             save=False,
         )[0]

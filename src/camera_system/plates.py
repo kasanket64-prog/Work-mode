@@ -3,7 +3,9 @@
 import argparse
 import json
 import re
-from itertools import islice
+import sys
+import time
+from contextlib import redirect_stdout
 from pathlib import Path
 
 import numpy as np
@@ -76,67 +78,115 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--stride", type=int, default=15)
     parser.add_argument("--max-frames", type=int, default=60)
+    parser.add_argument("--device", choices=["cpu", "cuda", "auto"], default="cpu")
     parser.add_argument(
         "--vehicle-crops",
         action="store_true",
         help="Experimental full-resolution vehicle crops; requires detection extra",
     )
     args = parser.parse_args(argv)
-    if args.stride < 1 or args.max_frames < 1:
-        parser.error("stride and max-frames must be positive")
-    from fast_alpr import ALPR
+    try:
+        if args.stride < 1 or args.max_frames < 1:
+            raise ValueError("stride and max-frames must be positive")
+        if args.output.exists():
+            raise ValueError(f"output already exists; choose a new path: {args.output}")
+        frames = FrameSource(str(args.video), args.stride)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        with args.output.open("x", encoding="utf-8") as stream:
+            count = 0
+            status = "completed"
+            reason = None
+            error = None
+            exit_code = 0
+            start = time.perf_counter()
 
-    model = ALPR(
-        detector_model="yolo-v9-t-384-license-plate-end2end",
-        ocr_model="cct-xs-v2-global-model",
-    )
-    detector = None
-    if args.vehicle_crops:
-        from .detection import DetectorSettings, YoloDetector
+            def emit(row):
+                stream.write(json.dumps(row, allow_nan=False) + "\n")
+                stream.flush()
 
-        detector = YoloDetector(DetectorSettings(image_size=1280, max_detections=40), "cpu")
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    with (
-        FrameSource(str(args.video), args.stride) as source,
-        args.output.open("x", encoding="utf-8") as stream,
-    ):
-
-        def emit(row):
-            stream.write(json.dumps(row, allow_nan=False) + "\n")
-            stream.flush()
-
-        emit(
-            {
-                "type": "session",
-                "source_kind": "video",
-                "analysis": "plate_candidates",
-                "source": str(args.video),
-                "frame_stride": args.stride,
-                "plate_scan_mode": "vehicle_crops" if detector else "full_frame",
-            }
-        )
-        count = 0
-        for frame in islice(source, args.max_frames):
-            plates = scan(model, frame.image, detector.detect(frame.image) if detector else None)
             emit(
                 {
-                    "type": "frame",
-                    "frame_index": frame.index,
-                    "frame_id": f"frame-{frame.index}",
-                    "timestamp_seconds": frame.timestamp_seconds,
-                    "image_size": list(frame.image.size),
-                    "plates": plates,
-                    "regions": [
-                        {"id": f"plate-{i}", "label": "plate", "box": p["box"]}
-                        for i, p in enumerate(plates)
-                    ],
-                    "preview_data_url": preview_image(frame.image),
+                    "type": "session",
+                    "source_kind": "video",
+                    "analysis": "plate_candidates",
+                    "source": str(args.video),
+                    "frame_stride": args.stride,
+                    "max_frames": args.max_frames,
+                    "device": args.device,
+                    "plate_scan_mode": "vehicle_crops" if args.vehicle_crops else "full_frame",
                 }
             )
-            count += 1
-        emit({"type": "summary", "status": "completed", "frames_processed": count})
-    print(args.output)
-    return 0
+            try:
+                try:
+                    from fast_alpr import ALPR
+                except ImportError as exc:
+                    raise RuntimeError(
+                        'Install plate dependencies: pip install -e ".[plates]"'
+                    ) from exc
+                with redirect_stdout(sys.stderr):
+                    model = ALPR(
+                        detector_model="yolo-v9-t-384-license-plate-end2end",
+                        ocr_model="cct-xs-v2-global-model",
+                    )
+                    detector = None
+                    if args.vehicle_crops:
+                        from .detection import DetectorSettings, YoloDetector
+
+                        detector = YoloDetector(
+                            DetectorSettings(image_size=1280, max_detections=40), args.device
+                        )
+                with frames:
+                    for frame in frames:
+                        with redirect_stdout(sys.stderr):
+                            plates = scan(
+                                model,
+                                frame.image,
+                                detector.detect(frame.image) if detector else None,
+                            )
+                        emit(
+                            {
+                                "type": "frame",
+                                "frame_index": frame.index,
+                                "frame_id": f"frame-{frame.index}",
+                                "timestamp_seconds": frame.timestamp_seconds,
+                                "image_size": list(frame.image.size),
+                                "plates": plates,
+                                "regions": [
+                                    {"id": f"plate-{i}", "label": "plate", "box": p["box"]}
+                                    for i, p in enumerate(plates)
+                                ],
+                                "preview_data_url": preview_image(frame.image),
+                            }
+                        )
+                        count += 1
+                        if count >= args.max_frames:
+                            reason = "max_frames"
+                            break
+                    reason = reason or frames.end_reason
+            except KeyboardInterrupt:
+                status, reason, exit_code = "interrupted", "keyboard_interrupt", 130
+            except Exception as exc:
+                status, reason, exit_code = "failed", frames.end_reason or "processing_error", 2
+                error = str(exc)
+                print(f"camera-plates: {error}", file=sys.stderr)
+            finally:
+                emit(
+                    {
+                        "type": "summary",
+                        "status": status,
+                        "end_reason": reason,
+                        "frames_read": frames.frames_read,
+                        "frames_processed": count,
+                        "frames_skipped_by_stride": frames.frames_skipped,
+                        "elapsed_seconds": time.perf_counter() - start,
+                        "error": error,
+                    }
+                )
+        print(args.output)
+        return exit_code
+    except (OSError, ValueError, RuntimeError, ImportError) as exc:
+        print(f"camera-plates: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

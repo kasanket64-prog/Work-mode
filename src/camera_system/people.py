@@ -20,6 +20,14 @@ def preview_image(image):
     return "data:image/jpeg;base64," + base64.b64encode(stream.getvalue()).decode("ascii")
 
 
+def save_preview_image(image, path: Path) -> Path:
+    thumbnail = image.copy()
+    thumbnail.thumbnail((960, 640))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    thumbnail.convert("RGB").save(path, format="JPEG", quality=75)
+    return path
+
+
 def upper_body_color(image, box):
     x1, y1, x2, y2 = box
     width, height = x2 - x1, y2 - y1
@@ -113,13 +121,22 @@ def pose_description(points, scores):
 
 
 class PoseEstimator:
-    def __init__(self, device="cpu", model="yolo11n-pose.pt"):
-        import torch
-        from ultralytics import YOLO
-
+    def __init__(self, device="cpu", model="yolo11n-pose.pt", half=False):
+        try:
+            import torch
+            from ultralytics import YOLO
+        except ImportError as exc:
+            raise RuntimeError(
+                'Install detection dependencies: pip install -e ".[detection]"'
+            ) from exc
+        if not isinstance(device, str) or device not in {"cpu", "cuda", "auto"}:
+            raise ValueError("device must be cpu, cuda, or auto")
         self.device = (
             ("cuda" if torch.cuda.is_available() else "cpu") if device == "auto" else device
         )
+        if self.device == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError("CUDA requested but unavailable; use --device cpu")
+        self.half = bool(half)
         self.model = YOLO(model, task="pose")
         self.metadata = {
             "model": model,
@@ -129,7 +146,13 @@ class PoseEstimator:
 
     def predict(self, image):
         result = self.model.predict(
-            source=image, device=self.device, verbose=False, save=False, conf=0.35, max_det=30
+            source=image,
+            device=self.device,
+            half=self.half and self.device == "cuda",
+            verbose=False,
+            save=False,
+            conf=0.35,
+            max_det=30,
         )[0]
         if result.keypoints is None or result.boxes is None or result.keypoints.conf is None:
             return []
@@ -145,8 +168,15 @@ class PoseEstimator:
 
 
 class PersonAnalyzer:
-    def __init__(self, pose_estimator):
+    def __init__(self, pose_estimator, relation_threshold: float = 0.6):
+        if (
+            type(relation_threshold) not in (int, float)
+            or not isfinite(relation_threshold)
+            or not 0 <= relation_threshold <= 1
+        ):
+            raise ValueError("relation_threshold must be in [0, 1]")
         self.pose_estimator = pose_estimator
+        self.relation_threshold = float(relation_threshold)
         self.previous = {}
         self.last_timestamp = None
 
@@ -237,7 +267,7 @@ class PersonAnalyzer:
                     "status": "model_candidate",
                 }
                 for r in relations
-                if r.subject_id == key and 0.6 <= r.score <= 1
+                if r.subject_id == key and self.relation_threshold <= r.score <= 1
             ]
             observations.append(
                 {

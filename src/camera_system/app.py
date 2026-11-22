@@ -22,6 +22,11 @@ from .vehicles import lookup
 MAX_UPLOAD = 512 * 1024 * 1024
 EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv", ".webm", ".jpg", ".jpeg", ".png"}
 IMAGES = {".jpg", ".jpeg", ".png"}
+CSP_POLICY = (
+    "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; "
+    "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; "
+    "connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+)
 
 
 def command(source, output, mode, limit, reasoning_config=None):
@@ -84,9 +89,10 @@ class Jobs:
         self.items = {}
         for path in self.root.glob("*/job.json"):
             try:
-                item = json.loads(path.read_text(encoding="utf-8"))
+                item = json.loads(path.read_text(encoding="utf-8-sig"))
                 if item["status"] in {"processing", "uploading", "cancelling"}:
                     item["status"] = "interrupted"
+                    self.save(item)
                 self.items[item["id"]] = item
             except (OSError, ValueError, KeyError):
                 continue
@@ -174,6 +180,7 @@ class Jobs:
             if key != self.active or item is None:
                 return False
             item["status"] = "cancelling"
+            self.save(item)
             return True
 
     def retry(self, key):
@@ -223,6 +230,8 @@ class Jobs:
                         error="Could not start retry. Check available disk space and retry.",
                     )
                     self.save(item)
+                else:
+                    shutil.rmtree(folder, ignore_errors=True)
             raise
 
     def run(self, item, source):
@@ -243,7 +252,9 @@ class Jobs:
                 )
                 deadline = time.monotonic() + 3600
                 while process.poll() is None:
-                    if item["status"] == "cancelling" or time.monotonic() > deadline:
+                    with self.lock:
+                        cancelling = item["status"] == "cancelling"
+                    if cancelling or time.monotonic() > deadline:
                         if os.name == "nt":
                             subprocess.run(
                                 ["taskkill", "/PID", str(process.pid), "/T", "/F"],
@@ -254,7 +265,9 @@ class Jobs:
                         else:
                             process.kill()
                         process.wait()
-                        if item["status"] == "cancelling":
+                        with self.lock:
+                            was_cancelling = item["status"] == "cancelling"
+                        if was_cancelling:
                             with self.lock:
                                 item["status"] = "cancelled"
                             return
@@ -303,8 +316,91 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            if content_type.startswith("text/html"):
+                self.send_header("Content-Security-Policy", CSP_POLICY)
             self.end_headers()
             self.wfile.write(body)
+
+        def serve_media(self, key, head_only=False):
+            sources = [jobs.root / key / ("input" + ext) for ext in EXTENSIONS]
+            sources = [source for source in sources if source.is_file()]
+            if len(sources) != 1:
+                return self.respond(404, {"error": "Saved media is unavailable"})
+            source = sources[0]
+            size = source.stat().st_size
+            requested = self.headers.get("Range")
+            if size == 0:
+                if requested:
+                    self.send_response(416)
+                    self.send_header("Content-Range", "bytes */0")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                start, end = 0, -1
+            else:
+                start, end = 0, size - 1
+                if requested:
+                    match = re.fullmatch(r"bytes=(\d{0,20})-(\d{0,20})", requested)
+                    if not match or not any(match.groups()):
+                        return self.respond(400, {"error": "Expected a single byte range"})
+                    first, last = match.groups()
+                    if first:
+                        start = int(first)
+                        end = min(int(last), end) if last else end
+                    else:
+                        start = max(0, size - int(last))
+                if start > end or start >= size:
+                    self.send_response(416)
+                    self.send_header("Content-Range", f"bytes */{size}")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+            mime = {
+                ".mp4": "video/mp4",
+                ".mov": "video/quicktime",
+                ".webm": "video/webm",
+                ".avi": "video/x-msvideo",
+                ".mkv": "video/x-matroska",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".png": "image/png",
+            }
+            content_length = 0 if size == 0 else end - start + 1
+            self.send_response(206 if requested else 200)
+            self.send_header("Content-Type", mime[source.suffix])
+            self.send_header("Content-Length", str(content_length))
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            if requested:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+            self.end_headers()
+            if head_only or content_length == 0:
+                return
+            try:
+                with source.open("rb") as stream:
+                    stream.seek(start)
+                    remaining = content_length
+                    while remaining:
+                        chunk = stream.read(min(1024 * 1024, remaining))
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+                        remaining -= len(chunk)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+        def do_HEAD(self):
+            if not self.local():
+                self.send_response(403)
+                self.end_headers()
+                return
+            path = urlsplit(self.path).path
+            media = re.fullmatch(r"/jobs/([a-f0-9]{32})/media", path)
+            if media:
+                return self.serve_media(media[1], head_only=True)
+            self.send_response(404)
+            self.end_headers()
 
         def do_GET(self):
             if not self.local():
@@ -326,57 +422,7 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
                 return self.respond(200, jobs.snapshot())
             media = re.fullmatch(r"/jobs/([a-f0-9]{32})/media", path)
             if media:
-                sources = [jobs.root / media[1] / ("input" + ext) for ext in EXTENSIONS]
-                sources = [source for source in sources if source.is_file()]
-                if len(sources) != 1:
-                    return self.respond(404, {"error": "Saved media is unavailable"})
-                source = sources[0]
-                size = source.stat().st_size
-                start, end = 0, size - 1
-                requested = self.headers.get("Range")
-                if requested:
-                    match = re.fullmatch(r"bytes=(\d{0,20})-(\d{0,20})", requested)
-                    if not match or not any(match.groups()):
-                        return self.respond(400, {"error": "Expected a single byte range"})
-                    first, last = match.groups()
-                    if first:
-                        start = int(first)
-                        end = min(int(last), end) if last else end
-                    else:
-                        start = max(0, size - int(last))
-                if start > end or start >= size:
-                    self.send_response(416)
-                    self.send_header("Content-Range", f"bytes */{size}")
-                    self.send_header("Content-Length", "0")
-                    self.end_headers()
-                    return
-                mime = {
-                    ".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm",
-                    ".avi": "video/x-msvideo", ".mkv": "video/x-matroska",
-                    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
-                }
-                self.send_response(206 if requested else 200)
-                self.send_header("Content-Type", mime[source.suffix])
-                self.send_header("Content-Length", str(end - start + 1))
-                self.send_header("Accept-Ranges", "bytes")
-                self.send_header("Cache-Control", "no-store")
-                self.send_header("X-Content-Type-Options", "nosniff")
-                if requested:
-                    self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
-                self.end_headers()
-                try:
-                    with source.open("rb") as stream:
-                        stream.seek(start)
-                        remaining = end - start + 1
-                        while remaining:
-                            chunk = stream.read(min(1024 * 1024, remaining))
-                            if not chunk:
-                                break
-                            self.wfile.write(chunk)
-                            remaining -= len(chunk)
-                except (BrokenPipeError, ConnectionResetError):
-                    pass
-                return
+                return self.serve_media(media[1], head_only=False)
             match = re.fullmatch(r"/jobs/([a-f0-9]{32})/(review|result|log)", path)
             if match:
                 key, kind = match.groups()
@@ -410,14 +456,15 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
                 self.close_connection = True
                 return self.respond(403, {"error": "Same-origin local access required"})
             try:
+                self.connection.settimeout(30)
+                path = urlsplit(self.path).path
                 length = int(self.headers.get("Content-Length", "0"))
                 if self.headers.get("Transfer-Encoding") or not 0 < length <= MAX_UPLOAD:
                     raise ValueError("Upload must have a known size between 1 byte and 512 MB.")
-                evaluation = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/evaluate", self.path)
+                evaluation = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/evaluate", path)
                 if evaluation:
                     if length > 262144 or self.headers.get_content_type() != "application/json":
                         raise ValueError("Annotations must be JSON smaller than 256 KB")
-                    self.connection.settimeout(30)
                     truth = json.loads(self.rfile.read(length))
                     with jobs.lock:
                         item = jobs.items.get(evaluation[1])
@@ -438,15 +485,15 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
                     except (ValueError, TypeError, KeyError, AttributeError) as exc:
                         raise ValueError("Invalid annotations: " + str(exc)) from exc
                     return self.respond(200, metrics)
-                if self.path == "/api/vehicle-lookup":
+                if path == "/api/vehicle-lookup":
                     if length > 4096 or self.headers.get_content_type() != "application/json":
                         raise ValueError("Expected small JSON request")
                     payload = json.loads(self.rfile.read(length))
                     if not isinstance(payload, dict) or set(payload) != {"country", "identifier"}:
                         raise ValueError("Expected country and identifier")
                     return self.respond(200, lookup(**payload))
-                cancel = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/cancel", self.path)
-                retry = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/retry", self.path)
+                cancel = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/cancel", path)
+                retry = re.fullmatch(r"/api/jobs/([a-f0-9]{32})/retry", path)
                 if retry:
                     if length > 32:
                         raise ValueError("Retry body too large")
@@ -464,7 +511,7 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
                         202 if jobs.cancel(cancel[1]) else 409,
                         {"message": "Cancellation requested if this job is active"},
                     )
-                if self.path != "/api/jobs":
+                if path != "/api/jobs":
                     return self.respond(404, {"error": "Not found"})
                 extension = self.headers.get("X-File-Extension", "").lower()
                 mode = self.headers.get("X-Analysis-Mode", "scene")
@@ -489,7 +536,6 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
                 try:
                     folder.mkdir()
                     source = folder / ("input" + extension)
-                    self.connection.settimeout(30)
                     with source.open("xb") as stream:
                         remaining = length
                         while remaining:
@@ -518,13 +564,20 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
                         if key in jobs.items:
                             jobs.items[key].update(status="failed", error="Could not start analysis")
                             jobs.save(jobs.items[key])
+                        else:
+                            shutil.rmtree(folder, ignore_errors=True)
                     raise
                 self.respond(202, dict(item))
             except (BrokenPipeError, ConnectionResetError):
                 self.close_connection = True
-            except (ValueError, TypeError, OSError) as exc:
+            except (ValueError, TypeError) as exc:
                 self.close_connection = True
                 self.respond(400, {"error": str(exc)})
+            except OSError:
+                self.close_connection = True
+                self.respond(
+                    400, {"error": "Local file or connection error while processing request."}
+                )
 
         def log_message(self, *args):
             pass

@@ -3,7 +3,7 @@
 import argparse
 import json
 import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from math import isclose, isfinite
 from pathlib import Path
@@ -12,7 +12,7 @@ from .vehicles import lookup
 
 
 def read_records(path):
-    raw = path.read_text(encoding="utf-8")
+    raw = path.read_text(encoding="utf-8-sig")
     try:
         data = json.loads(raw)
         if isinstance(data, dict) and "regions" in data:
@@ -164,9 +164,18 @@ def evaluate(rows, truth, tolerance=2.0):
         raise ValueError("partial runs require explicit evaluation_interval_seconds annotations")
     predicted = [e for frame in frames for e in frame.get("events", [])]
     expected = truth["events"]
+    if not isinstance(expected, list):
+        raise ValueError("events must be a list")
     mapping = truth.get("track_mapping", {})
+    if not isinstance(mapping, dict) or any(
+        not isinstance(k, str) or not k.strip() or not isinstance(v, str) or not v.strip()
+        for k, v in mapping.items()
+    ):
+        raise ValueError("track_mapping must be a dictionary of nonempty strings")
 
     def identity(event, predicted=False):
+        if not isinstance(event, dict):
+            raise ValueError("each event must be an object")
         key = event["object_track_id"]
         subject = event.get("subject_track_id")
         return (
@@ -177,6 +186,8 @@ def evaluate(rows, truth, tolerance=2.0):
         )
 
     for event in predicted + expected:
+        if not isinstance(event, dict):
+            raise ValueError("each event must be an object")
         t = event["timestamp_seconds"]
         if type(t) not in (int, float) or not isfinite(t) or not times[0] <= t <= times[-1]:
             raise ValueError("event timestamp lies outside annotated duration")
@@ -221,6 +232,21 @@ def evaluate(rows, truth, tolerance=2.0):
         if not indices <= {f["frame_index"] for f in frames}:
             raise ValueError("annotations include frames absent from this run")
 
+        relations_input = truth["relations"]
+        if not isinstance(relations_input, list) or any(
+            not isinstance(r, dict)
+            or type(r.get("frame_index")) is not int
+            or r["frame_index"] < 0
+            or not isinstance(r.get("subject_id"), str)
+            or not r["subject_id"].strip()
+            or not isinstance(r.get("predicate"), str)
+            or not r["predicate"].strip()
+            or not isinstance(r.get("object_id"), str)
+            or not r["object_id"].strip()
+            for r in relations_input
+        ):
+            raise ValueError("relations must be a list of frame-indexed relation objects")
+
         def relation_key(frame, r, remap=False):
             return (
                 frame,
@@ -235,7 +261,7 @@ def evaluate(rows, truth, tolerance=2.0):
             if f["frame_index"] in indices
             for r in f.get("confirmed_relations", [])
         }
-        target = {relation_key(r["frame_index"], r) for r in truth["relations"]}
+        target = {relation_key(r["frame_index"], r) for r in relations_input}
         if any(r[0] not in indices for r in target):
             raise ValueError("relation label outside annotated_frame_indices")
         result["confirmed_relations"] = metrics(
@@ -285,6 +311,9 @@ def make_server(rows, port=8765):
                     raise ValueError("Expected country and identifier.")
                 result = lookup(payload["country"], payload["identifier"])
                 status = 200
+            except (BrokenPipeError, ConnectionResetError):
+                self.close_connection = True
+                return
             except (ValueError, TypeError, OSError):
                 result, status = (
                     {
@@ -299,7 +328,10 @@ def make_server(rows, port=8765):
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                self.close_connection = True
 
         def do_GET(self):
             hosts = {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
@@ -320,13 +352,20 @@ def make_server(rows, port=8765):
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            if self.path == "/":
+                self.send_header(
+                    "Content-Security-Policy",
+                    "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; "
+                    "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; "
+                    "connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+                )
             self.end_headers()
             self.wfile.write(body)
 
         def log_message(self, *args):
             pass
 
-    return HTTPServer(("127.0.0.1", port), Handler)
+    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
 
 
 def main(argv=None):
@@ -352,7 +391,9 @@ def main(argv=None):
             payload = json.dumps(annotation_template(rows), indent=2, allow_nan=False)
         elif args.truth:
             payload = json.dumps(
-                evaluate(rows, json.loads(args.truth.read_text(encoding="utf-8")), args.tolerance),
+                evaluate(
+                    rows, json.loads(args.truth.read_text(encoding="utf-8-sig")), args.tolerance
+                ),
                 indent=2,
                 allow_nan=False,
             )

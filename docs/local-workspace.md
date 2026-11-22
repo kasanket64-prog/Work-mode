@@ -119,9 +119,8 @@ to that provider only after the user's confirmation.
 - This server binds to loopback only. It is a single-user development workspace,
   not a public hosting server. No accounts or remote access are provided.
 - One job at a time, 512 MB per upload, up to 600 sampled video frames.
-- Sampling is every 15th frame. The default 60-frame limit may stop before EOF.
-- Scene relationship inference runs every third sampled frame. Skipped frames
-  do not repeat earlier relationship predictions.
+- Sampling defaults to every 15th frame. The default 30-frame Quick look limit may stop before EOF.
+- Scene relationship inference runs on every sampled frame (`--relation-every 1`).
 - Each job has a one-hour process timeout. Keep the server running while a job
   is active. On restart, unfinished metadata is shown as interrupted.
 - Uploads, JSONL, review HTML and processing logs are under

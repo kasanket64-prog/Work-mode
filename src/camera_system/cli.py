@@ -14,7 +14,7 @@ from PIL import Image
 from .config import UPSTREAM_REVISION, load_settings
 from .contracts import parse_regions
 from .detection import YoloDetector, load_detector_settings
-from .people import PersonAnalyzer, PoseEstimator, preview_image
+from .people import PersonAnalyzer, PoseEstimator, preview_image, save_preview_image
 from .relations import RelateAnythingPredictor
 
 ATTRIBUTION = "Based on RelateAnything by Maëlic Neau — https://github.com/Maelic/RelateAnything"
@@ -33,6 +33,11 @@ def main(argv=None) -> int:
     parser.add_argument("--analyze-people", action="store_true")
     parser.add_argument(
         "--include-preview", action="store_true", help="Embed a local image thumbnail in results"
+    )
+    parser.add_argument(
+        "--preview-dir",
+        type=Path,
+        help="Write JPEG thumbnails to this directory instead of embedding data URLs",
     )
     parser.add_argument(
         "--validate-only",
@@ -94,7 +99,11 @@ def main(argv=None) -> int:
             "upstream_revision": UPSTREAM_REVISION,
         }
         if args.include_preview:
-            result["preview_data_url"] = preview_image(image)
+            if args.preview_dir:
+                save_preview_image(image, args.preview_dir / "image-0.jpg")
+                result["preview_path"] = "image-0.jpg"
+            else:
+                result["preview_data_url"] = preview_image(image)
         if detector_info is not None:
             result["detector"] = detector_info
             result["region_source"] = "detector"
