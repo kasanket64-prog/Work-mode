@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "attribution": "Based on RelateAnything by Ma\u00eblic Neau \u2014 https://github.com/Maelic/RelateAnything",
+  "status": "predicted",
+  "image": "examples\\horse.jpg",
+  "image_sha256": "549bd965a4ac9aa682f70e40757c5841d160c4e84eb86c2948d5bac5dedecf29",
+  "image_size": [
+    1280,
+    907
+  ],
+  "frame_id": "image-0",
+  "timestamp_seconds": null,
+  "regions": [
+    {
+      "id": "person-1",
+      "box": [
+        470.0,
+        130.0,
+        650.0,
+        630.0
+      ],
+      "label": "person",
+      "track_id": null,
+      "detection_score": null
+    },
+    {
+      "id": "horse-1",
+      "box": [
+        90.0,
+        310.0,
+        1010.0,
+        875.0
+      ],
+      "label": "horse",
+      "track_id": null,
+      "detection_score": null
+    }
+  ],
+  "settings": {
+    "model_id": "maelic/relsgg-vits16plus",
+    "model_revision": "2db90096be5217bdc7a9003c042950f45723d105",
+    "device": "cpu",
+    "topk": 5,
+    "max_regions": 60,
+    "min_score": 0.0,
+    "vocabulary": [
+      "riding",
+      "carrying a rider",
+      "beside",
+      "in front of"
+    ]
+  },
+  "upstream_revision": "06766fdf56752ca535fc9b971fca99ce563676d0",
+  "region_source": "manual",
+  "load_seconds": 69.11169379999046,
+  "relations": [
+    {
+      "subject_id": "person-1",
+      "predicate": "riding",
+      "object_id": "horse-1",
+      "score": 0.551749050617218
+    },
+    {
+      "subject_id": "horse-1",
+      "predicate": "carrying a rider",
+      "object_id": "person-1",
+      "score": 0.01989860273897648
+    }
+  ],
+  "rejected_relations": [],
+  "prediction_seconds": 3.313862999988487,
+  "resolved_device": "cpu"
+}

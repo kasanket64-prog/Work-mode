@@ -28,7 +28,7 @@ camera-relations = "camera_system.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-camera_system = ["templates/*.html", "templates/*.json"]
+camera_system = ["templates/*.html", "templates/*.json", "templates/*.css", "templates/*.js", "templates/*.jpg"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

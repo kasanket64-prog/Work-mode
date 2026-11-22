@@ -312,8 +312,71 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
             path = urlsplit(self.path).path
             if path == "/":
                 return self.respond(200, home, "text/html; charset=utf-8")
+            assets = {
+                "/assets/workspace.css": ("workspace.css", "text/css; charset=utf-8"),
+                "/assets/workspace.js": ("workspace.js", "text/javascript; charset=utf-8"),
+                "/assets/demo-horse.jpg": ("demo-horse.jpg", "image/jpeg"),
+                "/assets/demo-result.json": ("demo-result.json", "application/json"),
+            }
+            if path in assets:
+                name, content_type = assets[path]
+                asset = files("camera_system").joinpath("templates", name).read_bytes()
+                return self.respond(200, asset, content_type)
             if path == "/api/jobs":
                 return self.respond(200, jobs.snapshot())
+            media = re.fullmatch(r"/jobs/([a-f0-9]{32})/media", path)
+            if media:
+                sources = [jobs.root / media[1] / ("input" + ext) for ext in EXTENSIONS]
+                sources = [source for source in sources if source.is_file()]
+                if len(sources) != 1:
+                    return self.respond(404, {"error": "Saved media is unavailable"})
+                source = sources[0]
+                size = source.stat().st_size
+                start, end = 0, size - 1
+                requested = self.headers.get("Range")
+                if requested:
+                    match = re.fullmatch(r"bytes=(\d{0,20})-(\d{0,20})", requested)
+                    if not match or not any(match.groups()):
+                        return self.respond(400, {"error": "Expected a single byte range"})
+                    first, last = match.groups()
+                    if first:
+                        start = int(first)
+                        end = min(int(last), end) if last else end
+                    else:
+                        start = max(0, size - int(last))
+                if start > end or start >= size:
+                    self.send_response(416)
+                    self.send_header("Content-Range", f"bytes */{size}")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                mime = {
+                    ".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm",
+                    ".avi": "video/x-msvideo", ".mkv": "video/x-matroska",
+                    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+                }
+                self.send_response(206 if requested else 200)
+                self.send_header("Content-Type", mime[source.suffix])
+                self.send_header("Content-Length", str(end - start + 1))
+                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                if requested:
+                    self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+                self.end_headers()
+                try:
+                    with source.open("rb") as stream:
+                        stream.seek(start)
+                        remaining = end - start + 1
+                        while remaining:
+                            chunk = stream.read(min(1024 * 1024, remaining))
+                            if not chunk:
+                                break
+                            self.wfile.write(chunk)
+                            remaining -= len(chunk)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+                return
             match = re.fullmatch(r"/jobs/([a-f0-9]{32})/(review|result|log)", path)
             if match:
                 key, kind = match.groups()
@@ -322,6 +385,15 @@ def make_app(root, workspace, port=8780, reasoning_config=None):
                 ]
                 target = jobs.root / key / name
                 if target.is_file():
+                    if kind == "review":
+                        try:
+                            rows = read_records(jobs.root / key / "result.jsonl")
+                        except (OSError, ValueError):
+                            return self.respond(409, {"error": "Saved results are unavailable or invalid"})
+                        page = HTML.replace(
+                            "__DATA__", json.dumps(rows, allow_nan=False).replace("<", "\\u003c")
+                        )
+                        return self.respond(200, page.encode("utf-8"), "text/html; charset=utf-8")
                     return self.respond(
                         200,
                         target.read_bytes(),

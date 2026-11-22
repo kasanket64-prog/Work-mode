@@ -90,6 +90,11 @@ Remove-Item Env:RUN_MODEL_TESTS
 
 Copy `examples/horse.regions.json` and supply at least two objects. Each needs a unique string `id` and `box: [x1, y1, x2, y2]` in **original image pixels**. `label` and `track_id` are optional. Coordinates must be finite, nonnegative, inside the image, with positive box area. Coordinates refer to the stored image orientation; the runner does not rotate it using EXIF metadata. Labels are display metadata, not model features.
 
+Save region JSON as UTF-8; files with or without a byte-order mark are accepted,
+including Windows PowerShell's `Set-Content -Encoding UTF8` output. Run with
+`--validate-only` first to check your image, regions and configuration without
+loading weights. Use a new output filename for each inference run.
+
 ```powershell
 .\.venv\Scripts\camera-relations.exe --image path/to/image.jpg --regions path/to/regions.json --config configs/phase1.toml --output outputs/custom.json
 ```
