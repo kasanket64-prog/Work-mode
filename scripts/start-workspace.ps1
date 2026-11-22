@@ -5,7 +5,7 @@ try {
     if (-not (Test-Path -LiteralPath '.venv/Scripts/python.exe')) {
         throw 'Project environment is missing. Follow the README setup instructions first.'
     }
-    & '.venv/Scripts/python.exe' -m camera_system.app --port 8780
+    & '.venv/Scripts/python.exe' -m camera_system.app --port 8780 --warm-worker
 } finally {
     Pop-Location
 }
